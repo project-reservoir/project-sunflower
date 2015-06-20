@@ -14,7 +14,7 @@
         <TargetCommonOption>
           <Device>STM32F407VGTx</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F4xx_DFP.2.4.0</PackID>
+          <PackID>Keil.STM32F4xx_DFP.2.5.0</PackID>
           <PackURL>http://www.keil.com/pack</PackURL>
           <Cpu>IROM(0x08000000,0x100000) IRAM(0x20000000,0x20000) IRAM2(0x10000000,0x10000) CPUTYPE("Cortex-M4") FPU2 CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -462,6 +462,11 @@
               <FileType>5</FileType>
               <FilePath>.\app\inc\system_interrupts.h</FilePath>
             </File>
+            <File>
+              <FileName>app_header.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\common\inc\app_header.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -813,11 +818,6 @@
               <FilePath>.\support\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_cec.h</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_conf_template.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_conf_template.h</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_cortex.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_cortex.h</FilePath>
@@ -1118,6 +1118,24 @@
               <FilePath>.\support\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h</FilePath>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>conf</GroupName>
+          <Files>
+            <File>
+              <FileName>stm32f4xx_hal_conf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\conf\stm32f4xx_hal_conf.h</FilePath>
+            </File>
+            <File>
+              <FileName>system_stm32fxx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\conf\system_stm32fxx.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>FreeRTOS</GroupName>
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
