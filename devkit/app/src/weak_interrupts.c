@@ -5,12 +5,12 @@ void Dummy_Handler(void)
 	for(;;);
 }
 
-__weak ADC_Handler()
+__weak void ADC_Handler()
 {
 	Dummy_Handler();
 }
 
-__weak BusFault_Handler()
+__weak void BusFault_Handler()
 {
 	Dummy_Handler();
 }

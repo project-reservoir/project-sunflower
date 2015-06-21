@@ -28,10 +28,10 @@ void SysTick_Handler(void)
 // UP THE ALIGNMENT OF THIS SECTION.
 
 __attribute__((section("!!!!0.ADC_Handler"))) void ADC_Handler_Standin() { ADC_Handler(); }
-__attribute__((section("!!!!0.BusFault_Handler"))) void BusFault_Handler_Standin() { BusFault_Handler(); } { BusFault_Handler(); }
-__attribute__((section("!!!!0.CAN1_RX0_Handler"))) void CAN1_RX0_Handler_Standin() { CAN1_RX0_Handler(); } { CAN1_RX0_Handler(); }
-__attribute__((section("!!!!0.CAN1_RX1_Handler"))) void CAN1_RX1_Handler_Standin() { CAN1_RX1_Handler(); } { CAN1_RX1_Handler(); }
-__attribute__((section("!!!!0.CAN1_SCE_Handler"))) void CAN1_SCE_Handler_Standin() { CAN1_SCE_Handler(); } { CAN1_SCE_Handler(); }
+__attribute__((section("!!!!0.BusFault_Handler"))) void BusFault_Handler_Standin() { BusFault_Handler(); }
+__attribute__((section("!!!!0.CAN1_RX0_Handler"))) void CAN1_RX0_Handler_Standin() { CAN1_RX0_Handler(); }
+__attribute__((section("!!!!0.CAN1_RX1_Handler"))) void CAN1_RX1_Handler_Standin() { CAN1_RX1_Handler(); }
+__attribute__((section("!!!!0.CAN1_SCE_Handler"))) void CAN1_SCE_Handler_Standin() { CAN1_SCE_Handler(); }
 __attribute__((section("!!!!0.CAN1_TX_Handler"))) void CAN1_TX_Handler_Standin() { CAN1_TX_Handler(); }
 __attribute__((section("!!!!0.CAN2_RX0_Handler"))) void CAN2_RX0_Handler_Standin() { CAN2_RX0_Handler(); }
 __attribute__((section("!!!!0.CAN2_RX1_Handler"))) void CAN2_RX1_Handler_Standin() { CAN2_RX1_Handler(); }

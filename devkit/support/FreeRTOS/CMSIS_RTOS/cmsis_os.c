@@ -534,8 +534,8 @@ osStatus osMutexDelete (osMutexId mutex_id)
 */
 osSemaphoreId osSemaphoreCreate (const osSemaphoreDef_t *semaphore_def, int32_t count)
 {
-  (void) semaphore_def;
   osSemaphoreId sema;
+  (void) semaphore_def;
   
   if (count == 1) {
     vSemaphoreCreateBinary(sema);

@@ -1,8 +1,17 @@
 #include "hwctrl.h"
-#include "stm32l0xx_hal.h"
+#include "stm32f4xx_hal.h"
 #include "led_task.h"
-#include "usb_task.h"
 #include "cmsis_os.h"
+
+void SysTick_Handler(void)
+{
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+    {
+        xPortSysTickHandler();
+	}
+
+	HAL_IncTick();
+}
 
 unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
 {
@@ -19,27 +28,17 @@ int main(void)
 {	
 	xTaskHandle ledTaskHandle;
     xTaskHandle ledTask2Handle;
-
-    // Configure the system clock
-    SystemClock_Config();
-    
-    // Setup external ports on the MCU
-    HwCtrl_Init();
     
     // Initialize the ST Micro Board Support Library
     HAL_Init();
     
-    // Flash an LED on and off forever.
-	/*while(1)
-	{
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-
-		HAL_Delay(1000);
-
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-
-		HAL_Delay(1000);
-	}*/
+    // Setup external ports on the MCU
+    HwCtrl_Init();
+    
+    // Configure the system clock
+    
+    // TODO: fix HSE oscillator configuration. Chip crashes after calling this line
+    //SystemClock_Config();
 
     // Create an LED blink tasks	
     xTaskCreate(LedBlinkTask,
