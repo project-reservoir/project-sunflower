@@ -29,16 +29,14 @@ int main(void)
 	xTaskHandle ledTaskHandle;
     xTaskHandle ledTask2Handle;
     
-    // Initialize the ST Micro Board Support Library
-    HAL_Init();
+    // Configure the system clock
+    SystemClock_Config();
     
     // Setup external ports on the MCU
     HwCtrl_Init();
     
-    // Configure the system clock
-    
-    // TODO: fix HSE oscillator configuration. Chip crashes after calling this line
-    //SystemClock_Config();
+    // Initialize the ST Micro Board Support Library
+    HAL_Init();
 
     // Create an LED blink tasks	
     xTaskCreate(LedBlinkTask,
