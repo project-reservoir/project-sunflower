@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F</IncludePath>
+              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -432,6 +432,16 @@
               <FileType>2</FileType>
               <FilePath>.\app\startup_stm32f407xx.s</FilePath>
             </File>
+            <File>
+              <FileName>radio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\radio.c</FilePath>
+            </File>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\spi.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -456,6 +466,16 @@
               <FileName>app_header.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\common\inc\app_header.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\radio.h</FilePath>
+            </File>
+            <File>
+              <FileName>spi.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\spi.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1127,6 +1147,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\conf\system_stm32f4xx.c</FilePath>
             </File>
+            <File>
+              <FileName>radio_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\conf\radio_config.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1246,6 +1271,76 @@
               <FileName>heap_4.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\FreeRTOS\portable\MemMang\heap_4.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Si4463</GroupName>
+          <Files>
+            <File>
+              <FileName>radio_comm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_comm.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_comm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_comm.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio_hal.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_hal.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_hal.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_hal.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_api_lib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_api_lib.c</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_api_lib.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_api_lib.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_cmd.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_cmd.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_defs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_defs.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_nirq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_nirq.c</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_nirq.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_nirq.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_patch.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_patch.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_prop.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_prop.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\bsp.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,7 +1,11 @@
 #include "hwctrl.h"
 #include "stm32f4xx_hal.h"
 #include "led_task.h"
+#include "radio.h"
 #include "cmsis_os.h"
+
+volatile uint8_t sendRadioCmd = 0;
+
 
 void SysTick_Handler(void)
 {
@@ -24,10 +28,39 @@ unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
   return fpriority;
 }
 
+void SendRadioCommandTask(void)
+{
+    uint8_t* buff;
+
+    while(1)
+    {
+        while(sendRadioCmd != 1)
+        {
+            osDelay(10);
+        }
+        
+        buff = pvPortMalloc(7);
+        
+        buff[0] = 'B';
+        buff[1] = 'U';
+        buff[2] = 'T';
+        buff[3] = 'T';
+        buff[4] = 'O';
+        buff[5] = 'N';
+        buff[6] = '1';
+        
+        SendToBroadcast(buff, 7);
+        
+        sendRadioCmd = 0;
+    }
+    
+}
+
 int main(void)
 {	
 	xTaskHandle ledTaskHandle;
-    xTaskHandle ledTask2Handle;
+    xTaskHandle radioTaskHandle;
+    xTaskHandle sendCmdTask;
     
     // Configure the system clock
     SystemClock_Config();
@@ -37,27 +70,53 @@ int main(void)
     
     // Initialize the ST Micro Board Support Library
     HAL_Init();
-
+    
+    RadioTaskOSInit();
+    
+    
+    xTaskCreate(SendRadioCommandTask,
+                "CmdTask",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                makeFreeRtosPriority(osPriorityNormal),
+                &sendCmdTask);
+	
+    xTaskCreate(RadioTask,
+                "RadioTask",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                makeFreeRtosPriority(osPriorityNormal),
+                &radioTaskHandle);
+    
     // Create an LED blink tasks	
     xTaskCreate(LedBlinkTask,
                 "LEDTask",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 makeFreeRtosPriority(osPriorityNormal),
-                &ledTaskHandle);					
-    
-    xTaskCreate(Led2BlinkTask,
-                "LED2Task",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &ledTask2Handle);    
+                &ledTaskHandle);
     
     // Start scheduler
     vTaskStartScheduler();
 
     // We should never get here as control is now taken by the scheduler
     for(;;);
+}
+
+void EXTI0_IRQHandler(void)
+{
+    /* EXTI line interrupt detected */
+    if(__HAL_GPIO_EXTI_GET_IT(KEY_BUTTON_PIN) != RESET)
+    { 
+        __HAL_GPIO_EXTI_CLEAR_IT(KEY_BUTTON_PIN);
+        sendRadioCmd = 1;
+    }
+}
+
+void EXTI1_IRQHandler(void)
+{
+    __HAL_GPIO_EXTI_CLEAR_IT(RADIO_NIRQ_PIN);        
+    SignalRadioIRQ();
 }
 
 #ifdef  USE_FULL_ASSERT
