@@ -4,6 +4,7 @@
 #include "si446x_api_lib.h"
 #include "si446x_cmd.h"
 #include "spi.h"
+#include "hwctrl.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -19,8 +20,8 @@ tRadioConfiguration* pRadioConfiguration = &RadioConfiguration;
 uint8_t customRadioPacket[RADIO_MAX_PACKET_LENGTH];
 
 // Local variables 
-static uint8_t txBuff[BUFFSIZE];
-static uint8_t rxBuff[BUFFSIZE];
+static uint8_t txBuff[RADIO_MAX_PACKET_LENGTH];
+static uint8_t rxBuff[RADIO_MAX_PACKET_LENGTH];
 
 static RadioTaskState radioTaskState = CONNECTED;
 static NetworkInfo    network;
@@ -28,6 +29,7 @@ static NetworkInfo    network;
 // Local function prototypes
 static uint8_t SendRadioConfig(void);
 static void    Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRadioPacket, uint8_t length);
+static void    Radio_StartRX(uint8_t channel);
 static void    SignalRadioTXNeeded(void);
 
 // Global function implementations
@@ -158,6 +160,10 @@ void RadioTask(void)
     osEvent msgQueueEvent;
     RadioMessage* msg;
     
+    // Delay to allow other tasks to start
+    // Not delaying before starting the radio causes unpredictable behavior at boot!
+    osDelay(2000);
+    
     // Configure radio
     while(!radioConfigured)
     {
@@ -174,13 +180,15 @@ void RadioTask(void)
         }
     }
     
+    Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
+    
     // Now that the radio has been configured, enable radio interrupts
     HAL_NVIC_SetPriority(NIRQ_IRQn, 8, 1);
     HAL_NVIC_EnableIRQ(NIRQ_IRQn);
     
     // Enable User pushbutton IRQ
-    HAL_NVIC_SetPriority(KEY_BUTTON_EXTI_IRQn, 8, 2);
-    HAL_NVIC_EnableIRQ(KEY_BUTTON_EXTI_IRQn);
+    //HAL_NVIC_SetPriority(KEY_BUTTON_EXTI_IRQn, 8, 2);
+    //HAL_NVIC_EnableIRQ(KEY_BUTTON_EXTI_IRQn);
     
     while(1)
     {               
@@ -221,11 +229,6 @@ void RadioTask(void)
                         }
                     }
                 }
-                else
-                {
-                    // Message wasn't received OK? Just wait for another one... something went wrong with the OS.
-                    continue;
-                }
                 break;
             
             // Send ANNOUNCE packets every 20 seconds and see if we get a reply
@@ -235,6 +238,8 @@ void RadioTask(void)
                 // If network found, store details and move to -> CONNECTING
                 break;
         }
+        
+        osDelay(10);
     }
 }
 
@@ -324,6 +329,18 @@ void Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRadioPacket, uin
    si446x_start_tx(channel, 0x30, length);
 }
 
+void Radio_StartRX(uint8_t channel)
+{
+  // Read ITs, clear pending ones
+  si446x_get_int_status(0u, 0u, 0u);
+
+  /* Start Receiving packet, channel 0, START immediately, Packet n bytes long */
+  si446x_start_rx(channel, 0u, RadioConfiguration.Radio_PacketLength,
+                  SI446X_CMD_START_RX_ARG_NEXT_STATE1_RXTIMEOUT_STATE_ENUM_NOCHANGE,
+                  SI446X_CMD_START_RX_ARG_NEXT_STATE2_RXVALID_STATE_ENUM_RX,
+                  SI446X_CMD_START_RX_ARG_NEXT_STATE3_RXINVALID_STATE_ENUM_RX );
+}
+
 void RadioTaskHandleIRQ(void)
 {
     uint8_t phInt = 0;
@@ -334,9 +351,9 @@ void RadioTaskHandleIRQ(void)
     si446x_get_int_status(0u, 0u, 0u);
     
     // Only process status flags if they triggered this interrupt
-    phInt = Si446xCmd.GET_INT_STATUS.PH_PEND & Si446xCmd.GET_INT_STATUS.PH_STATUS;
-    chipInt = Si446xCmd.GET_INT_STATUS.CHIP_PEND & Si446xCmd.GET_INT_STATUS.CHIP_STATUS;
-    modemInt = Si446xCmd.GET_INT_STATUS.MODEM_PEND & Si446xCmd.GET_INT_STATUS.MODEM_STATUS;      
+    phInt = Si446xCmd.GET_INT_STATUS.PH_PEND; // & Si446xCmd.GET_INT_STATUS.PH_STATUS;
+    chipInt = Si446xCmd.GET_INT_STATUS.CHIP_PEND; // & Si446xCmd.GET_INT_STATUS.CHIP_STATUS;
+    modemInt = Si446xCmd.GET_INT_STATUS.MODEM_PEND; // & Si446xCmd.GET_INT_STATUS.MODEM_STATUS;      
     
     // PACKET_SENT
     if(phInt & PACKET_SENT)
@@ -347,7 +364,12 @@ void RadioTaskHandleIRQ(void)
     // PACKET_RX
     if(phInt & PACKET_RX)
     {
+        si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
+        
         // TODO: Received a packet addressed to us. Put it in the input queue
+        HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
+        osDelay(200);
+        HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
     }
     
     // CRC_ERROR

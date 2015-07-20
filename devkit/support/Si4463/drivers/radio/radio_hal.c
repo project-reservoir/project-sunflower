@@ -62,36 +62,36 @@ BIT radio_hal_NirqLevel(void)
 
 void radio_hal_SpiWriteByte(U8 byteToWrite)
 {   
-    taskENTER_CRITICAL();
+    //taskENTER_CRITICAL();
     SPI_WriteByte(byteToWrite);
     SPI_WaitForNotBusy();
-    taskEXIT_CRITICAL();
+    //taskEXIT_CRITICAL();
 }
 
 U8 radio_hal_SpiReadByte(void)
 {
     uint8_t byte;
-    taskENTER_CRITICAL();
+    //taskENTER_CRITICAL();
     SPI_ReadByte(&byte);
     SPI_WaitForNotBusy();
-    taskEXIT_CRITICAL();
+    //taskEXIT_CRITICAL();
     return byte;
 }
 
 void radio_hal_SpiWriteData(U8 byteCount, U8* pData)
 {
-    taskENTER_CRITICAL();
+    //taskENTER_CRITICAL();
     SPI_WriteBytes(pData, byteCount);
     SPI_WaitForNotBusy();
-    taskEXIT_CRITICAL();
+    //taskEXIT_CRITICAL();
 }
 
 void radio_hal_SpiReadData(U8 byteCount, U8* pData)
 {
-    taskENTER_CRITICAL();
+    //taskENTER_CRITICAL();
     SPI_ReadBytes(pData, byteCount);
     SPI_WaitForNotBusy();
-    taskEXIT_CRITICAL();
+    //taskEXIT_CRITICAL();
 }
 
 #ifdef RADIO_DRIVER_EXTENDED_SUPPORT

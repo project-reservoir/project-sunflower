@@ -6,7 +6,6 @@
 
 volatile uint8_t sendRadioCmd = 0;
 
-
 void SysTick_Handler(void)
 {
     if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
@@ -28,34 +27,6 @@ unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
   return fpriority;
 }
 
-void SendRadioCommandTask(void)
-{
-    uint8_t* buff;
-
-    while(1)
-    {
-        while(sendRadioCmd != 1)
-        {
-            osDelay(10);
-        }
-        
-        buff = pvPortMalloc(7);
-        
-        buff[0] = 'B';
-        buff[1] = 'U';
-        buff[2] = 'T';
-        buff[3] = 'T';
-        buff[4] = 'O';
-        buff[5] = 'N';
-        buff[6] = '1';
-        
-        SendToBroadcast(buff, 7);
-        
-        sendRadioCmd = 0;
-    }
-    
-}
-
 int main(void)
 {	
 	xTaskHandle ledTaskHandle;
@@ -72,14 +43,6 @@ int main(void)
     HAL_Init();
     
     RadioTaskOSInit();
-    
-    
-    xTaskCreate(SendRadioCommandTask,
-                "CmdTask",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &sendCmdTask);
 	
     xTaskCreate(RadioTask,
                 "RadioTask",
