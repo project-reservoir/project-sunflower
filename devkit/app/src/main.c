@@ -27,11 +27,15 @@ unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
   return fpriority;
 }
 
+void vApplicationStackOverflowHook(void)
+{
+    HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
+}
+
 int main(void)
 {	
 	xTaskHandle ledTaskHandle;
     xTaskHandle radioTaskHandle;
-    xTaskHandle sendCmdTask;
     
     // Configure the system clock
     SystemClock_Config();

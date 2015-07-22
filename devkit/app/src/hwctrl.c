@@ -1,4 +1,5 @@
 #include "hwctrl.h"
+#include "led_task.h"
 #include "radio.h"
 
 void SystemClock_Config(void)
@@ -33,34 +34,11 @@ void SystemClock_Config(void)
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
-    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
+    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
 }
 
 void HwCtrl_Init(void)
 {
-	// Initialize LED3 and LED4
-	GPIO_InitTypeDef  GPIO_InitStruct;
-
-	/* Enable the GPIO_LED Clock */
-	LED3_GPIO_CLK_ENABLE();
-    LED4_GPIO_CLK_ENABLE();
-
-	/* Configure the GPIO_LED pin */
-	GPIO_InitStruct.Pin = LED3_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
-
-	HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
-
-	GPIO_InitStruct.Pin = LED4_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
-
-	HAL_GPIO_Init(LED4_GPIO_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(LED4_GPIO_PORT, LED4_PIN, GPIO_PIN_RESET);
-    
+	LedTaskHwInit();    
     RadioTaskHwInit();
 }

@@ -5,6 +5,8 @@
 #include "si446x_cmd.h"
 #include "spi.h"
 #include "hwctrl.h"
+#include "led_task.h"
+#include "sensor_conversions.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -25,12 +27,14 @@ static uint8_t rxBuff[RADIO_MAX_PACKET_LENGTH];
 
 static RadioTaskState radioTaskState = CONNECTED;
 static NetworkInfo    network;
+static SensorData     sensorData;
 
 // Local function prototypes
-static uint8_t SendRadioConfig(void);
-static void    Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRadioPacket, uint8_t length);
-static void    Radio_StartRX(uint8_t channel);
-static void    SignalRadioTXNeeded(void);
+static uint8_t    SendRadioConfig(void);
+static void       Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRadioPacket, uint8_t length);
+static void       Radio_StartRX(uint8_t channel);
+static void       SignalRadioTXNeeded(void);
+static SensorData ParseSensorMessage(uint8_t* radioMessage);
 
 // Global function implementations
 void RadioTaskOSInit(void)
@@ -68,6 +72,18 @@ void RadioTaskOSInit(void)
 void RadioTaskHwInit(void)
 {   
     GPIO_InitTypeDef  GPIO_InitStruct;
+    
+    // Enable LED
+    
+    LED3_GPIO_CLK_ENABLE();
+    
+	GPIO_InitStruct.Pin = LED3_PIN;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
+
+	HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStruct);
+	HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
 
     /*##-1- Enable peripherals and GPIO Clocks #################################*/
     /* Enable GPIO TX/RX clock */
@@ -366,6 +382,8 @@ void RadioTaskHandleIRQ(void)
     {
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
+        sensorData = ParseSensorMessage(rxBuff);
+        
         // TODO: Received a packet addressed to us. Put it in the input queue
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
         osDelay(200);
@@ -391,4 +409,66 @@ void RadioTaskHandleIRQ(void)
     //  INVALID_SYNC
     //  TX_FIFO_ALMOST_EMPTY
     //  RX_FIFO_ALMOST_FULL
+}
+
+// Accepts a 20 byte sensor message and converts it to a sensor data type
+SensorData ParseSensorMessage(uint8_t* radioMessage)
+{
+    uint16_t tmp = 0;
+    SensorData retVal;
+    /*
+    // moist 0
+    radioMessage[0] = 0x00; 
+    radioMessage[1] = 0x00; 
+    
+    // moist 1
+    radioMessage[2] = 0x00;
+    radioMessage[3] = 0x00;
+    
+    // moist 2
+    radioMessage[4] = 0x00;
+    radioMessage[5] = 0x00;*/
+    
+    retVal.tempChip = 0.0;
+    retVal.tempRadio = 0.0;
+    retVal.moist0 = 0.0;
+    retVal.moist1 = 0.0;
+    retVal.moist2 = 0.0;
+    
+    // humid    
+    tmp = (radioMessage[6] << 8) & 0xFF00;        // MSB
+    tmp |= ((uint16_t)radioMessage[7]) & 0x00FF;  // LSB
+    retVal.humid = HTU21D_Humid_To_Float(tmp);
+
+    // temp 0    
+    tmp = (radioMessage[8] << 8) & 0xFF00;        // MSB
+    tmp |= ((uint16_t)radioMessage[9]) & 0x00FF;  // LSB
+    retVal.temp0 = TMP102_To_Float(tmp);
+
+    // temp 1
+    tmp = (radioMessage[10] << 8) & 0xFF00;       // MSB
+    tmp |= ((uint16_t)radioMessage[11]) & 0x00FF; // LSB
+    retVal.temp1 = TMP102_To_Float(tmp);
+
+    // temp 2
+    tmp = (radioMessage[12] << 8) & 0xFF00;       // MSB
+    tmp |= ((uint16_t)radioMessage[13]) & 0x00FF; // LSB
+    retVal.temp2 = TMP102_To_Float(tmp);
+
+    // air temp
+    tmp = (radioMessage[14] << 8) & 0xFF00;       // MSB
+    tmp |= ((uint16_t)radioMessage[15]) & 0x00FF; // LSB
+    retVal.tempAir = HTU21D_Temp_To_Float(tmp);
+    
+    /*
+    
+    // battery level
+    radioMessage[16] = 0x00;
+    radioMessage[17] = 0x00;
+    
+    // solar level
+    radioMessage[18] = 0x00;
+    radioMessage[19] = 0x00;*/
+    
+    return retVal;
 }

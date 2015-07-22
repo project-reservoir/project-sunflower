@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio</IncludePath>
+              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;.\cross-platform\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1341,6 +1341,21 @@
               <FileName>bsp.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\support\Si4463\bsp.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>cross-platform</GroupName>
+          <Files>
+            <File>
+              <FileName>sensor_conversions.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\cross-platform\inc\sensor_conversions.h</FilePath>
+            </File>
+            <File>
+              <FileName>sensor_conversions.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cross-platform\src\sensor_conversions.c</FilePath>
             </File>
           </Files>
         </Group>
