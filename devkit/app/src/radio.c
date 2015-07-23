@@ -416,24 +416,24 @@ SensorData ParseSensorMessage(uint8_t* radioMessage)
 {
     uint16_t tmp = 0;
     SensorData retVal;
-    /*
-    // moist 0
-    radioMessage[0] = 0x00; 
-    radioMessage[1] = 0x00; 
-    
-    // moist 1
-    radioMessage[2] = 0x00;
-    radioMessage[3] = 0x00;
-    
-    // moist 2
-    radioMessage[4] = 0x00;
-    radioMessage[5] = 0x00;*/
     
     retVal.tempChip = 0.0;
     retVal.tempRadio = 0.0;
-    retVal.moist0 = 0.0;
-    retVal.moist1 = 0.0;
-    retVal.moist2 = 0.0;
+    
+    //moist 0
+    tmp = (radioMessage[0] << 8) & 0xFF00;        // MSB
+    tmp |= ((uint16_t)radioMessage[1]) & 0x00FF;  // LSB
+    retVal.moist0 = SMS_To_Float(tmp);
+    
+    // moist 1
+    tmp = (radioMessage[2] << 8) & 0xFF00;        // MSB
+    tmp |= ((uint16_t)radioMessage[3]) & 0x00FF;  // LSB
+    retVal.moist1 = SMS_To_Float(tmp);
+    
+    // moist 2
+    tmp = (radioMessage[4] << 8) & 0xFF00;        // MSB
+    tmp |= ((uint16_t)radioMessage[5]) & 0x00FF;  // LSB
+    retVal.moist2 = SMS_To_Float(tmp);
     
     // humid    
     tmp = (radioMessage[6] << 8) & 0xFF00;        // MSB

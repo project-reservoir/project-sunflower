@@ -198,7 +198,7 @@
           <Type>0</Type>
           <LineNumber>392</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134228018</Address>
+          <Address>134228066</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -231,7 +231,7 @@
       <DebugFlag>
         <trace>0</trace>
         <periodic>1</periodic>
-        <aLwin>1</aLwin>
+        <aLwin>0</aLwin>
         <aCover>0</aCover>
         <aSer1>0</aSer1>
         <aSer2>0</aSer2>
