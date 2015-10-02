@@ -4,18 +4,6 @@
 #include "radio.h"
 #include "cmsis_os.h"
 
-volatile uint8_t sendRadioCmd = 0;
-
-void SysTick_Handler(void)
-{
-    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-    {
-        xPortSysTickHandler();
-	}
-
-	HAL_IncTick();
-}
-
 unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
 {
   unsigned portBASE_TYPE fpriority = tskIDLE_PRIORITY;
@@ -68,22 +56,6 @@ int main(void)
 
     // We should never get here as control is now taken by the scheduler
     for(;;);
-}
-
-void EXTI0_IRQHandler(void)
-{
-    /* EXTI line interrupt detected */
-    if(__HAL_GPIO_EXTI_GET_IT(KEY_BUTTON_PIN) != RESET)
-    { 
-        __HAL_GPIO_EXTI_CLEAR_IT(KEY_BUTTON_PIN);
-        sendRadioCmd = 1;
-    }
-}
-
-void EXTI1_IRQHandler(void)
-{
-    __HAL_GPIO_EXTI_CLEAR_IT(RADIO_NIRQ_PIN);        
-    SignalRadioIRQ();
 }
 
 #ifdef  USE_FULL_ASSERT

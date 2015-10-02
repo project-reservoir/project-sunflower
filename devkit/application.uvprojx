@@ -50,7 +50,7 @@
           <OutputName>application</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
-          <CreateHexFile>0</CreateHexFile>
+          <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
           <ListingPath>.\Listings\</ListingPath>
@@ -172,12 +172,12 @@
             <UseExternalTool>0</UseExternalTool>
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
-            <Capability>0</Capability>
-            <DriverSelection>-1</DriverSelection>
+            <Capability>1</Capability>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -311,8 +311,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <StartAddress>0x8004000</StartAddress>
+                <Size>0xfc000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -399,7 +399,7 @@
             <TextAddressRange>0x08000000</TextAddressRange>
             <DataAddressRange>0x20000000</DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>.\app\app.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -428,25 +428,45 @@
               <FilePath>.\app\src\main.c</FilePath>
             </File>
             <File>
-              <FileName>startup_stm32f407xx.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\app\startup_stm32f407xx.s</FilePath>
-            </File>
-            <File>
               <FileName>radio.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\src\radio.c</FilePath>
             </File>
             <File>
-              <FileName>spi.c</FileName>
+              <FileName>console.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\app\src\spi.c</FilePath>
+              <FilePath>.\app\src\console.c</FilePath>
+            </File>
+            <File>
+              <FileName>system_interrupts.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\system_interrupts.c</FilePath>
+            </File>
+            <File>
+              <FileName>metadata.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\metadata.c</FilePath>
+            </File>
+            <File>
+              <FileName>startup_stm32f407xx.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\app\startup_stm32f407xx.s</FilePath>
+            </File>
+            <File>
+              <FileName>debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\debug.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
           <GroupName>inc</GroupName>
           <Files>
+            <File>
+              <FileName>console.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\console.h</FilePath>
+            </File>
             <File>
               <FileName>hwctrl.h</FileName>
               <FileType>5</FileType>
@@ -473,9 +493,9 @@
               <FilePath>.\app\inc\radio.h</FilePath>
             </File>
             <File>
-              <FileName>spi.h</FileName>
+              <FileName>debug.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\app\inc\spi.h</FilePath>
+              <FilePath>.\app\inc\debug.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1356,6 +1376,36 @@
               <FileName>sensor_conversions.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\cross-platform\src\sensor_conversions.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>bsp/inc</GroupName>
+          <Files>
+            <File>
+              <FileName>spi.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\spi.h</FilePath>
+            </File>
+            <File>
+              <FileName>uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\uart.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>bsp/src</GroupName>
+          <Files>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\uart.c</FilePath>
             </File>
           </Files>
         </Group>
