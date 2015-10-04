@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;.\cross-platform\inc</IncludePath>
+              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;.\cross-platform\inc;.\support\LwIP\system\OS;.\support\LwIP\src\include;.\support\LwIP\system;.\support\LwIP\test\unit;.\support\LwIP\src\include\ipv4</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -457,6 +457,16 @@
               <FileType>1</FileType>
               <FilePath>.\app\src\debug.c</FilePath>
             </File>
+            <File>
+              <FileName>retarget.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\retarget.c</FilePath>
+            </File>
+            <File>
+              <FileName>ethernetif.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\ethernetif.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -497,6 +507,11 @@
               <FileType>5</FileType>
               <FilePath>.\app\inc\debug.h</FilePath>
             </File>
+            <File>
+              <FileName>ethernetif.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\ethernetif.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -516,16 +531,6 @@
               <FileName>stm32f4xx_hal_adc_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_adc_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_can.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_can.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_cec.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_cec.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_cortex.c</FileName>
@@ -556,16 +561,6 @@
               <FileName>stm32f4xx_hal_dac_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_dac_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_dcmi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_dcmi.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_dcmi_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_dcmi_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_dma.c</FileName>
@@ -628,11 +623,6 @@
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_hash_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_hcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_hcd.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_i2c.c</FilePath>
@@ -653,49 +643,9 @@
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_i2s_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_irda.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_irda.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_iwdg.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_iwdg.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_ltdc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_ltdc.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_msp_template.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_msp_template.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_nand.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_nand.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_nor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_nor.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pccard.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pccard.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pcd_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_pwr.c</FileName>
@@ -738,16 +688,6 @@
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_rtc_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_sai.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_sai.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_sai_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_sai_ex.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_sd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_sd.c</FilePath>
@@ -756,16 +696,6 @@
               <FileName>stm32f4xx_hal_sdram.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_sdram.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_smartcard.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_smartcard.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_spdifrx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_spdifrx.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_spi.c</FileName>
@@ -801,26 +731,6 @@
               <FileName>stm32f4xx_hal_wwdg.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_wwdg.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_fmc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_fmc.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_fsmc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_fsmc.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_sdmmc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_sdmmc.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_usb.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal.h</FileName>
@@ -1406,6 +1316,336 @@
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\src\uart.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LWIP</GroupName>
+          <Files>
+            <File>
+              <FileName>sys_arch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\system\OS\sys_arch.c</FilePath>
+            </File>
+            <File>
+              <FileName>def.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\def.c</FilePath>
+            </File>
+            <File>
+              <FileName>dhcp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\dhcp.c</FilePath>
+            </File>
+            <File>
+              <FileName>dns.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\dns.c</FilePath>
+            </File>
+            <File>
+              <FileName>init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\init.c</FilePath>
+            </File>
+            <File>
+              <FileName>lwip_timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\lwip_timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>mem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\mem.c</FilePath>
+            </File>
+            <File>
+              <FileName>memp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\memp.c</FilePath>
+            </File>
+            <File>
+              <FileName>netif.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\netif.c</FilePath>
+            </File>
+            <File>
+              <FileName>pbuf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\pbuf.c</FilePath>
+            </File>
+            <File>
+              <FileName>raw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\raw.c</FilePath>
+            </File>
+            <File>
+              <FileName>stats.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\stats.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\sys.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\tcp.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_in.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\tcp_in.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_out.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\tcp_out.c</FilePath>
+            </File>
+            <File>
+              <FileName>udp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\udp.c</FilePath>
+            </File>
+            <File>
+              <FileName>autoip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\autoip.c</FilePath>
+            </File>
+            <File>
+              <FileName>icmp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\icmp.c</FilePath>
+            </File>
+            <File>
+              <FileName>igmp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\igmp.c</FilePath>
+            </File>
+            <File>
+              <FileName>inet.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\inet.c</FilePath>
+            </File>
+            <File>
+              <FileName>inet_chksum.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\inet_chksum.c</FilePath>
+            </File>
+            <File>
+              <FileName>ip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\ip.c</FilePath>
+            </File>
+            <File>
+              <FileName>ip_addr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\ip_addr.c</FilePath>
+            </File>
+            <File>
+              <FileName>ip_frag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\core\ipv4\ip_frag.c</FilePath>
+            </File>
+            <File>
+              <FileName>api_lib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\api_lib.c</FilePath>
+            </File>
+            <File>
+              <FileName>api_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\api_msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>err.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\err.c</FilePath>
+            </File>
+            <File>
+              <FileName>netbuf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\netbuf.c</FilePath>
+            </File>
+            <File>
+              <FileName>netdb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\netdb.c</FilePath>
+            </File>
+            <File>
+              <FileName>netifapi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\netifapi.c</FilePath>
+            </File>
+            <File>
+              <FileName>sockets.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\sockets.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcpip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\api\tcpip.c</FilePath>
+            </File>
+            <File>
+              <FileName>api.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\api.h</FilePath>
+            </File>
+            <File>
+              <FileName>api_msg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\api_msg.h</FilePath>
+            </File>
+            <File>
+              <FileName>arch.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\arch.h</FilePath>
+            </File>
+            <File>
+              <FileName>debug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\debug.h</FilePath>
+            </File>
+            <File>
+              <FileName>def.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\def.h</FilePath>
+            </File>
+            <File>
+              <FileName>dhcp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\dhcp.h</FilePath>
+            </File>
+            <File>
+              <FileName>dns.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\dns.h</FilePath>
+            </File>
+            <File>
+              <FileName>err.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\err.h</FilePath>
+            </File>
+            <File>
+              <FileName>init.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\init.h</FilePath>
+            </File>
+            <File>
+              <FileName>lwip_timers.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\lwip_timers.h</FilePath>
+            </File>
+            <File>
+              <FileName>mem.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\mem.h</FilePath>
+            </File>
+            <File>
+              <FileName>memp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\memp.h</FilePath>
+            </File>
+            <File>
+              <FileName>memp_std.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\memp_std.h</FilePath>
+            </File>
+            <File>
+              <FileName>netbuf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\netbuf.h</FilePath>
+            </File>
+            <File>
+              <FileName>netdb.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\netdb.h</FilePath>
+            </File>
+            <File>
+              <FileName>netif.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\netif.h</FilePath>
+            </File>
+            <File>
+              <FileName>netifapi.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\netifapi.h</FilePath>
+            </File>
+            <File>
+              <FileName>opt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\opt.h</FilePath>
+            </File>
+            <File>
+              <FileName>pbuf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\pbuf.h</FilePath>
+            </File>
+            <File>
+              <FileName>raw.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\raw.h</FilePath>
+            </File>
+            <File>
+              <FileName>sio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\sio.h</FilePath>
+            </File>
+            <File>
+              <FileName>snmp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\snmp.h</FilePath>
+            </File>
+            <File>
+              <FileName>snmp_asn1.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\snmp_asn1.h</FilePath>
+            </File>
+            <File>
+              <FileName>snmp_msg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\snmp_msg.h</FilePath>
+            </File>
+            <File>
+              <FileName>snmp_structs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\snmp_structs.h</FilePath>
+            </File>
+            <File>
+              <FileName>sockets.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\sockets.h</FilePath>
+            </File>
+            <File>
+              <FileName>stats.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\stats.h</FilePath>
+            </File>
+            <File>
+              <FileName>sys.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\sys.h</FilePath>
+            </File>
+            <File>
+              <FileName>tcp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\tcp.h</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_impl.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\tcp_impl.h</FilePath>
+            </File>
+            <File>
+              <FileName>tcpip.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\tcpip.h</FilePath>
+            </File>
+            <File>
+              <FileName>udp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\LwIP\src\include\lwip\udp.h</FilePath>
             </File>
           </Files>
         </Group>

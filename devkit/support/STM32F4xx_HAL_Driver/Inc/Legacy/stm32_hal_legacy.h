@@ -639,19 +639,6 @@
 /**
   * @}
   */
-  
-/** @defgroup HAL_ETH_Aliased_Defines HAL ETH Aliased Defines maintained for legacy purpose
-  * @{
-  */
-
-#define VLAN_TAG                ETH_VLAN_TAG
-#define MIN_ETH_PAYLOAD         ETH_MIN_ETH_PAYLOAD
-#define MAX_ETH_PAYLOAD         ETH_MAX_ETH_PAYLOAD
-#define JUMBO_FRAME_PAYLOAD     ETH_JUMBO_FRAME_PAYLOAD
-#define MACMIIAR_CR_MASK        ETH_MACMIIAR_CR_MASK
-#define MACCR_CLEAR_MASK        ETH_MACCR_CLEAR_MASK
-#define MACFCR_CLEAR_MASK       ETH_MACFCR_CLEAR_MASK
-#define DMAOMR_CLEAR_MASK       ETH_DMAOMR_CLEAR_MASK
 
 #define ETH_MMCCR              ((uint32_t)0x00000100)  
 #define ETH_MMCRIR             ((uint32_t)0x00000104)  
