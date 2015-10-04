@@ -295,7 +295,6 @@ void SendToBroadcast(uint8_t* data, uint8_t size)
 
 uint8_t SendRadioConfig(void)
 {
-    uint16_t wDelay = 0;
     uint8_t retVal;
     
     si446x_reset();

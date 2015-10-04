@@ -3,6 +3,17 @@
 #include "led_task.h"
 #include "radio.h"
 #include "cmsis_os.h"
+#include "stm32f4x7_eth.h"
+#include "netconf.h"
+#include "main.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "tcpip.h"
+#include "httpserver-socket.h"
+
+#define DHCP_TASK_PRIO   ( tskIDLE_PRIORITY + 2 ) 
+
+#pragma import(__use_no_semihosting)
 
 unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
 {
@@ -35,7 +46,18 @@ int main(void)
     HAL_Init();
     
     RadioTaskOSInit();
+    
+    ETH_BSP_Config();
+    
+    /* Initilaize the LwIP stack */
+    LwIP_Init();
+
+    /* Initialize webserver demo */
+    http_server_socket_init();
 	
+    /* Start DHCPClient */
+    xTaskCreate(LwIP_DHCP_task, "DHCPClient", configMINIMAL_STACK_SIZE * 2, NULL,DHCP_TASK_PRIO, NULL);
+    
     xTaskCreate(RadioTask,
                 "RadioTask",
                 configMINIMAL_STACK_SIZE,
@@ -58,8 +80,6 @@ int main(void)
     for(;;);
 }
 
-#ifdef  USE_FULL_ASSERT
-
 /**
   * @brief  Reports the name of the source file and the source line number
   *   where the assert_param error has occurred.
@@ -76,4 +96,3 @@ void assert_failed(uint8_t* file, uint32_t line)
   while (1)
   {}
 }
-#endif

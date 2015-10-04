@@ -107,7 +107,6 @@ void ConsoleTask(void)
 void processString(char* str)
 {
     uint8_t len = string_len(str);
-    uint8_t i;
     
     ConsolePrint("\r\n");
     

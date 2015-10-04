@@ -7,6 +7,7 @@
 volatile uint8_t sendRadioCmd = 0;
 
 extern void __main(void);
+extern void xPortSysTickHandler();
 
 void SysTick_Handler(void)
 {

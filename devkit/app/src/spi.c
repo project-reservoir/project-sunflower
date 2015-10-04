@@ -22,6 +22,7 @@ void SPI_WaitForTX(void)
 void SPI_WriteByte(uint8_t byte)
 {
     uint8_t dummy;
+    (void*)dummy;
     
     SPI_WaitForTX();   
     *(uint8_t *)&(SPI1->DR) = byte; /* Will inititiate 8-bit transmission */
@@ -33,6 +34,8 @@ void SPI_WriteBytes(uint8_t* bytes, uint8_t len)
 {
     uint8_t i;
     uint8_t dummy;
+    (void*)dummy;
+    
     for(i = 0; i < len; i++)
     {
         SPI_WaitForTX();

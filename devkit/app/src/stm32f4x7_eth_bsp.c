@@ -42,6 +42,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4x7_eth.h"
 #include "stm32f4x7_eth_bsp.h"
+#include "stm32f4xx_hal.h"
 #include "main.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,6 +65,7 @@ static void ETH_NVIC_Config(void);
   */
 void ETH_BSP_Config(void)
 {
+  ETH_HandleTypeDef handle;
   /* Configure the GPIO ports for ethernet pins */
   ETH_GPIO_Config();
   
@@ -71,12 +73,11 @@ void ETH_BSP_Config(void)
   ETH_NVIC_Config();
 
   /* Configure the Ethernet MAC/DMA */
-  ETH_MACDMA_Config();
+  //ETH_MACDMA_Config();
+    
+  HAL_ETH_Init(handle);
 
   if (EthInitStatus == 0) {
-    LCD_SetTextColor(LCD_COLOR_RED);
-    LCD_DisplayStringLine(Line5, (uint8_t*)"   Ethernet Init   ");
-    LCD_DisplayStringLine(Line6, (uint8_t*)"      failed      ");
     while(1);
   }
 }
@@ -91,8 +92,9 @@ static void ETH_MACDMA_Config(void)
   ETH_InitTypeDef ETH_InitStructure;
 
   /* Enable ETHERNET clock  */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC | RCC_AHB1Periph_ETH_MAC_Tx |
-                         RCC_AHB1Periph_ETH_MAC_Rx, ENABLE);                                             
+  __HAL_RCC_ETHMAC_CLK_ENABLE();
+  __HAL_RCC_ETHMACTX_CLK_ENABLE();
+  __HAL_RCC_ETHMACRX_CLK_ENABLE();                                       
 
   /* Reset ETHERNET on AHB Bus */
   ETH_DeInit();
@@ -163,15 +165,17 @@ void ETH_GPIO_Config(void)
   GPIO_InitTypeDef GPIO_InitStructure;
   
   /* Enable GPIOs clocks */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB
-	                       | RCC_AHB1Periph_GPIOC, ENABLE);
+  __GPIOA_CLK_ENABLE();
+  __GPIOB_CLK_ENABLE();
+  __GPIOC_CLK_ENABLE();
+  __GPIOE_CLK_ENABLE();
 
   /* Enable SYSCFG clock */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);  
+  __HAL_RCC_SYSCFG_CLK_ENABLE();  
   
   /* MII/RMII Media interface selection --------------------------------------*/
-  SYSCFG_ETH_MediaInterfaceConfig(SYSCFG_ETH_MediaInterface_RMII);
-
+  SYSCFG->PMC &= ~(SYSCFG_PMC_MII_RMII_SEL);
+  SYSCFG->PMC |= SYSCFG_PMC_MII_RMII_SEL;
 
 /* Ethernet pins configuration ************************************************/
    /*
@@ -192,42 +196,32 @@ void ETH_GPIO_Config(void)
    */
 
   /* Configure PA1,PA2 and PA7 */
-  GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_7;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_ETH);
+  GPIO_InitStructure.Pin   = GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_7;
+  GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
+  GPIO_InitStructure.Mode  = GPIO_MODE_AF_PP;
+  GPIO_InitStructure.Pull  = GPIO_NOPULL;
+  GPIO_InitStructure.Alternate = GPIO_AF11_ETH;
+  
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
   /* Configure PB10,PB11,PB12 and PB13 */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12 | GPIO_Pin_13;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_ETH);	
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource12, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_ETH);
-
+  GPIO_InitStructure.Pin = GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
+  
   /* Configure PC1, PC4 and PC5 */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_4 | GPIO_Pin_5;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource1, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource4, GPIO_AF_ETH);
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource5, GPIO_AF_ETH);
+  GPIO_InitStructure.Pin = GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 
   /* Configure the PHY RST  pin */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOE, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin = GPIO_PIN_2;
+  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull = GPIO_PULLUP;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
 
-  GPIO_ResetBits(GPIOE, GPIO_Pin_2);	
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_2, GPIO_PIN_RESET);
   for (i = 0; i < 20000; i++);
-  GPIO_SetBits(GPIOE, GPIO_Pin_2);
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_2, GPIO_PIN_SET);
   for (i = 0; i < 20000; i++);
 }
 
@@ -237,18 +231,10 @@ void ETH_GPIO_Config(void)
   * @retval None
   */
 void ETH_NVIC_Config(void)
-{
-  NVIC_InitTypeDef   NVIC_InitStructure;
-
-  /* 2 bit for pre-emption priority, 2 bits for subpriority */
-  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); 
-  
-  /* Enable the Ethernet global Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel = ETH_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);    
+{    
+    NVIC_SetPriorityGrouping(1);
+    NVIC_SetPriority(ETH_IRQn, NVIC_EncodePriority(1, 2, 0));
+    NVIC_EnableIRQ(ETH_IRQn);
 }
 
 /*********** Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.*****END OF FILE****/

@@ -25,7 +25,7 @@
   * @author  CMP Team
   * @version V1.0.0
   * @date    28-December-2012
-  * @brief   Header for stm32f4x7_eth_bsp.c file.       
+  * @brief   Header for stm32f4x7_eth_bsp.c file.      
   *          Modified to support the STM32F4DISCOVERY, STM32F4DIS-BB and
   *          STM32F4DIS-LCD modules. 
   ******************************************************************************
@@ -48,9 +48,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx.h"
-#include "stm32f4_discovery.h"
-#include "stm32f4_discovery_lcd.h"
+#include "stm32f4xx_hal.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

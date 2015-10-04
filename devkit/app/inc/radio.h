@@ -3,31 +3,31 @@
 
 #include "stm32f4xx_hal.h"
 
-#define SPIx                             SPI1
-#define SPIx_CLK_ENABLE()                __SPI1_CLK_ENABLE()
-#define SPIx_SCK_GPIO_CLK_ENABLE()       __GPIOA_CLK_ENABLE()
-#define SPIx_MISO_GPIO_CLK_ENABLE()      __GPIOB_CLK_ENABLE() 
-#define SPIx_MOSI_GPIO_CLK_ENABLE()      __GPIOB_CLK_ENABLE() 
+#define SPIx                             SPI2
+#define SPIx_CLK_ENABLE()                __SPI2_CLK_ENABLE()
+#define SPIx_SCK_GPIO_CLK_ENABLE()       __GPIOB_CLK_ENABLE()
+#define SPIx_MISO_GPIO_CLK_ENABLE()      __GPIOC_CLK_ENABLE() 
+#define SPIx_MOSI_GPIO_CLK_ENABLE()      __GPIOC_CLK_ENABLE() 
 
-#define SPIx_FORCE_RESET()               __SPI1_FORCE_RESET()
-#define SPIx_RELEASE_RESET()             __SPI1_RELEASE_RESET()
+#define SPIx_FORCE_RESET()               __SPI2_FORCE_RESET()
+#define SPIx_RELEASE_RESET()             __SPI2_RELEASE_RESET()
 
 /* Definition for SPIx Pins */
-#define SPIx_NSS_PIN                     GPIO_PIN_15
-#define SPIx_NSS_GPIO_PORT               GPIOA
-#define SPIx_NSS_AF                      GPIO_AF5_SPI1
+#define SPIx_NSS_PIN                     GPIO_PIN_14
+#define SPIx_NSS_GPIO_PORT               GPIOB
+#define SPIx_NSS_AF                      GPIO_AF5_SPI2
 
-#define SPIx_SCK_PIN                     GPIO_PIN_5
-#define SPIx_SCK_GPIO_PORT               GPIOA
-#define SPIx_SCK_AF                      GPIO_AF5_SPI1
+#define SPIx_SCK_PIN                     GPIO_PIN_10
+#define SPIx_SCK_GPIO_PORT               GPIOB
+#define SPIx_SCK_AF                      GPIO_AF5_SPI2
 
-#define SPIx_MISO_PIN                    GPIO_PIN_4
-#define SPIx_MISO_GPIO_PORT              GPIOB
-#define SPIx_MISO_AF                     GPIO_AF5_SPI1
+#define SPIx_MISO_PIN                    GPIO_PIN_2
+#define SPIx_MISO_GPIO_PORT              GPIOC
+#define SPIx_MISO_AF                     GPIO_AF5_SPI2
 
-#define SPIx_MOSI_PIN                    GPIO_PIN_5
-#define SPIx_MOSI_GPIO_PORT              GPIOB
-#define SPIx_MOSI_AF                     GPIO_AF5_SPI1
+#define SPIx_MOSI_PIN                    GPIO_PIN_3
+#define SPIx_MOSI_GPIO_PORT              GPIOC
+#define SPIx_MOSI_AF                     GPIO_AF5_SPI2
 
 #define RADIO_NIRQ_PIN                   GPIO_PIN_1
 #define RADIO_NIRQ_GPIO_PORT             GPIOB
