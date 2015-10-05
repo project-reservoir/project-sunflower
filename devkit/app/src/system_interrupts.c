@@ -28,6 +28,14 @@ void EXTI0_IRQHandler(void)
     }
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == GPIO_PIN_14)
+  {
+    osSemaphoreRelease(Netif_LinkSemaphore);
+  }
+}
+
 void EXTI1_IRQHandler(void)
 {
     __HAL_GPIO_EXTI_CLEAR_IT(RADIO_NIRQ_PIN);        

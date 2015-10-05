@@ -3,6 +3,36 @@
 #include "led_task.h"
 #include "radio.h"
 #include "cmsis_os.h"
+#include "tcp_task.h"
+#include "ethernetif.h"
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
+
+/*Static IP ADDRESS*/
+#define IP_ADDR0   192
+#define IP_ADDR1   168
+#define IP_ADDR2   0
+#define IP_ADDR3   10
+   
+/*NETMASK*/
+#define NETMASK_ADDR0   255
+#define NETMASK_ADDR1   255
+#define NETMASK_ADDR2   255
+#define NETMASK_ADDR3   0
+
+/*Gateway Address*/
+#define GW_ADDR0   192
+#define GW_ADDR1   168
+#define GW_ADDR2   0
+#define GW_ADDR3   1  
+
+static void Netif_Config(void);
+
+struct netif gnetif; /* network interface structure */
+/* Semaphore to signal Ethernet Link state update */
+osSemaphoreId Netif_LinkSemaphore = NULL;
+/* Ethernet link thread Argument */
+struct link_str link_arg;
 
 unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
 {
@@ -35,7 +65,16 @@ int main(void)
     HAL_Init();
     
     RadioTaskOSInit();
+    
+    tcpip_init(NULL, NULL);
+    
+    lwip_init();
+    
+    Netif_Config();
+    
+    tcpecho_init();
 	
+    // TODO: use CMSIS_OS functions for this to remove dependency on makeFreeRtosPriority()
     xTaskCreate(RadioTask,
                 "RadioTask",
                 configMINIMAL_STACK_SIZE,
@@ -56,6 +95,61 @@ int main(void)
 
     // We should never get here as control is now taken by the scheduler
     for(;;);
+}
+
+void Netif_Config(void)
+{
+  struct ip_addr ipaddr;
+  struct ip_addr netmask;
+  struct ip_addr gw;	
+  
+  /* IP address setting */
+  IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
+  IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
+  IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+  
+  /* - netif_add(struct netif *netif, struct ip_addr *ipaddr,
+  struct ip_addr *netmask, struct ip_addr *gw,
+  void *state, err_t (* init)(struct netif *netif),
+  err_t (* input)(struct pbuf *p, struct netif *netif))
+  
+  Adds your network interface to the netif_list. Allocate a struct
+  netif and pass a pointer to this structure as the first argument.
+  Give pointers to cleared ip_addr structures when using DHCP,
+  or fill them with sane numbers otherwise. The state pointer may be NULL.
+  
+  The init function pointer must point to a initialization function for
+  your ethernet netif interface. The following code illustrates it's use.*/
+  
+  netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+  
+  /*  Registers the default network interface. */
+  netif_set_default(&gnetif);
+  
+  if (netif_is_link_up(&gnetif))
+  {
+    /* When the netif is fully configured this function must be called.*/
+    netif_set_up(&gnetif);
+  }
+  else
+  {
+    /* When the netif link is down this function must be called */
+    netif_set_down(&gnetif);
+  }
+
+  /* Set the link callback function, this function is called on change of link status*/
+  netif_set_link_callback(&gnetif, ethernetif_update_config);
+  
+  /* create a binary semaphore used for informing ethernetif of frame reception */
+  osSemaphoreDef(Netif_SEM);
+  Netif_LinkSemaphore = osSemaphoreCreate(osSemaphore(Netif_SEM) , 1 );
+  
+  link_arg.netif = &gnetif;
+  link_arg.semaphore = Netif_LinkSemaphore;
+  
+  /* Create the Ethernet link handler thread */
+  osThreadDef(LinkThr, ethernetif_set_link, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
+  osThreadCreate (osThread(LinkThr), &link_arg);
 }
 
 #ifdef  USE_FULL_ASSERT

@@ -1,5 +1,5 @@
-#ifndef __LED_TASK_H
-#define __LED_TASK_H
+#ifndef _LED_TASK_H
+#define _LED_TASK_H
 
 #define LED4_PIN                         GPIO_PIN_12
 #define LED4_GPIO_PORT                   GPIOD

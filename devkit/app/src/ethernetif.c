@@ -154,7 +154,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
   /* Enable ETHERNET clock  */
   __HAL_RCC_ETH_CLK_ENABLE();
   
-  if (heth->Init.MediaInterface == ETH_MEDIA_INTERFACE_MII)
+  if (heth->Init.MediaInterface == ETH_MEDIA_INTERFACE_RMII)
   {
     /* Output HSE clock (25MHz) on MCO pin (PA8) to clock the PHY */
     HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSE, RCC_MCODIV_1);

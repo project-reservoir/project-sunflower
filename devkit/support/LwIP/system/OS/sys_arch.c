@@ -37,8 +37,10 @@
 #include "lwip/mem.h"
 #include "lwip/stats.h"
 #include "lwip/err.h"
+#include "arch/sys_arch.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 
 xTaskHandle xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 
@@ -47,11 +49,6 @@ xTaskHandle xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 
 static u16_t s_nextthread = 0;
 
-
-err_t myFunc(void)
-{
-    return -1;
-}
 
 /*-----------------------------------------------------------------------------------*/
 //  Creates an empty mailbox.
