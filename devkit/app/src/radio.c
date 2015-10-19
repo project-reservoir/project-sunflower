@@ -7,6 +7,7 @@
 #include "hwctrl.h"
 #include "led_task.h"
 #include "sensor_conversions.h"
+#include "radio_packets.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -382,9 +383,34 @@ void RadioTaskHandleIRQ(void)
     {
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
-        sensorData = ParseSensorMessage(rxBuff);
+        radio_message_t* message = (radio_message_t*)rxBuff;
         
-        // TODO: Received a packet addressed to us. Put it in the input queue
+        switch(message->generic.cmd)
+        {
+            // The base station has requested info from us: reply with it
+            case DEVICE_INFO:
+                // TODO: Unpack the response
+                // TODO: Store the response for later sending to Bouquet
+                break;
+            
+            case SENSOR_MSG:
+                sensorData = ParseSensorMessage(rxBuff);
+                // TODO: Store the response for later sending to Bouquet
+                break;
+            
+            case FW_UPD_START:
+                // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                break;
+            
+            case FW_UPD_END:
+                // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                break;
+                
+            case FW_UPD_PAYLOAD:
+                // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                break;
+        }
+        
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
         osDelay(200);
         HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);

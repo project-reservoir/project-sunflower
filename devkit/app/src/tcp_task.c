@@ -37,6 +37,8 @@
 #include "lwip/netif.h"
 #include "lwip/opt.h"
 #include "ethernetif.h"
+#include "cmsis_os.h"
+#include "stm32f4xx_hal.h"
 
 #define TCPECHO_THREAD_PRIO  ( tskIDLE_PRIORITY + 4 )
 
@@ -48,7 +50,10 @@ static void tcpecho_thread(void *arg)
   struct netbuf *buf;
   void *data;
   u16_t len;
-      
+  ip_addr_t ip;
+  
+  IP4_ADDR(&ip, 108, 168, 14, 205);
+  
   LWIP_UNUSED_ARG(arg);
 
   /* Create a new connection identifier. */
@@ -56,9 +61,19 @@ static void tcpecho_thread(void *arg)
   
   if (conn!=NULL)
   {  
+      
+    err = netconn_connect(conn, &ip, 80);
+      
+    if (err == ERR_OK)
+    {
+        __BKPT(0);
+    } else {
+        __BKPT(1);
+    }
+      
     /* Bind connection to well known port number 7. */
     err = netconn_bind(conn, NULL, 7);
-    
+      
     if (err == ERR_OK)
     {
       /* Tell connection to go into listening mode. */

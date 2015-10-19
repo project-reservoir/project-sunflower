@@ -7,33 +7,62 @@
 #include "debug.h"
 #include <string.h>
 
-// Minimum message size includes the ':' starting character and the \n
-#define MIN_INTEL_MESSAGE_LEN   12
-#define MAX_INTEL_PAYLOAD       0x10
+UART_HandleTypeDef  UartHandle;
+osMessageQId        uartRxMsgQ;
 
-UART_HandleTypeDef UartHandle;
-osMessageQId uartRxMsgQ;
+uint8_t             rxBuff[CONSOLE_MAX_MSG_SIZE];
+uint8_t             txBuff[CONSOLE_MAX_MSG_SIZE];
+uint8_t             tmpHALRxBuff;
 
-char rxBuff[CONSOLE_MAX_MSG_SIZE];
-char txBuff[CONSOLE_MAX_MSG_SIZE];
+uint8_t             rxBuffPos = 0;
+uint8_t             txBuffPos = 0;
 
-uint8_t rxBuffPos = 0;
-uint8_t txBuffPos = 0;
+uint8_t             console_task_started = 0;
 
-uint8_t console_task_started = 0;
+char                testString[] = {"TEST TEST TEST"};
 
-uint16_t extended_address = 0;
-uint16_t current_intel_address = 0;
-uint8_t intel_hex_payload[MAX_INTEL_PAYLOAD];
-
-static void processString(char* str);
-static uint8_t string_len(char* str);
-static void processDebugCommand(char* str, uint8_t len);
+static void         processString(char* str);
+static uint8_t      string_len(char* str);
+static void         processDebugCommand(char* str, uint8_t len);
 
 void ConsoleTaskHwInit(void)
 {
+    /*
     GPIO_InitTypeDef  GPIO_InitStruct;
     
+    //##-1- Enable peripherals and GPIO Clocks #################################
+    // Enable GPIO TX/RX clock 
+    USARTx_TX_GPIO_CLK_ENABLE();
+    USARTx_RX_GPIO_CLK_ENABLE();
+    // Enable USART3 clock 
+    USARTx_CLK_ENABLE(); 
+
+    //##-2- Configure peripheral GPIO ##########################################
+    // UART TX GPIO pin configuration  
+    GPIO_InitStruct.Pin       = USARTx_TX_PIN;
+    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull      = GPIO_NOPULL;
+    GPIO_InitStruct.Speed     = GPIO_SPEED_FAST;
+    GPIO_InitStruct.Alternate = USARTx_TX_AF;
+
+    HAL_GPIO_Init(USARTx_TX_GPIO_PORT, &GPIO_InitStruct);
+
+    // UART RX GPIO pin configuration
+    GPIO_InitStruct.Pin = USARTx_RX_PIN;
+    GPIO_InitStruct.Alternate = USARTx_RX_AF;
+
+    HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
+
+    // ##-3- Configure the NVIC for UART ########################################
+    // NVIC for USART1 
+    HAL_NVIC_SetPriority(USARTx_IRQn, 7, 1);
+    HAL_NVIC_EnableIRQ(USARTx_IRQn);*/
+}
+
+void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+{  
+    GPIO_InitTypeDef  GPIO_InitStruct;
+
     /*##-1- Enable peripherals and GPIO Clocks #################################*/
     /* Enable GPIO TX/RX clock */
     USARTx_TX_GPIO_CLK_ENABLE();
@@ -59,7 +88,7 @@ void ConsoleTaskHwInit(void)
 
     /*##-3- Configure the NVIC for UART ########################################*/
     /* NVIC for USART1 */
-    HAL_NVIC_SetPriority(USARTx_IRQn, 0, 1);
+    HAL_NVIC_SetPriority(USARTx_IRQn, 7, 1);
     HAL_NVIC_EnableIRQ(USARTx_IRQn);
 }
 
@@ -68,15 +97,17 @@ void ConsoleTaskOSInit(void)
     osMessageQDef(UARTRxMsgQueue, CONSOLE_MSG_Q_SIZE, char*);
     uartRxMsgQ = osMessageCreate(osMessageQ(UARTRxMsgQueue), NULL);
     
-    UartHandle.Instance        = USARTx;
-    UartHandle.Init.BaudRate   = 9600;
-    UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
-    UartHandle.Init.StopBits   = UART_STOPBITS_1;
-    UartHandle.Init.Parity     = UART_PARITY_NONE;
-    UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
-    UartHandle.Init.Mode       = UART_MODE_TX_RX;
-    
-    assert_param(HAL_UART_Init(&UartHandle) == HAL_OK);
+    UartHandle.Instance          = USARTx;
+  
+    UartHandle.Init.BaudRate     = 9600;
+    UartHandle.Init.WordLength   = UART_WORDLENGTH_8B;
+    UartHandle.Init.StopBits     = UART_STOPBITS_1;
+    UartHandle.Init.Parity       = UART_PARITY_NONE;
+    UartHandle.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+    UartHandle.Init.Mode         = UART_MODE_TX_RX;
+    UartHandle.Init.OverSampling = UART_OVERSAMPLING_16;
+
+    HAL_UART_Init(&UartHandle) == HAL_OK ? assert_param(1) : assert_param(0);
 }
 
 void ConsoleTask(void)
@@ -87,6 +118,10 @@ void ConsoleTask(void)
     while(1)
     {
         UART_StartRX(USARTx);
+        /*if(HAL_UART_Receive_IT(&UartHandle, &tmpHALRxBuff, 1) != HAL_OK)
+        {
+            assert_param(0);
+        }*/
         
         console_task_started = 1;
         
@@ -113,11 +148,6 @@ void processString(char* str)
     
     switch(str[0])
     {
-        #ifdef CONSOLE_FW_UPDATE
-        case ':':
-            ParseIntelHex(str, len);
-            break;
-        #endif
         case 'r':
             if(len >= 2)
             {
@@ -136,7 +166,7 @@ void processString(char* str)
             processDebugCommand(str, len);
             break;
         case 'v':
-            ConsolePrint("DANDELION OS V ");
+            ConsolePrint("SUNFLOWER OS V ");
             ConsolePrint(APP_VERSION_STR);
             ConsolePrint("\r\n");
             ConsolePrint("BUILD DATE: ");
@@ -205,6 +235,13 @@ uint8_t string_len(char* str)
 void ConsolePrint(char* text)
 {
     uint8_t i = string_len(text);
+    
+    /*if(HAL_UART_Transmit_IT(&UartHandle, (uint8_t*)text, i )!= HAL_OK)
+    {
+        assert_param(0);
+    }*/
+    
+    
     while(!console_task_started)
     {
         osDelay(10);
@@ -244,4 +281,9 @@ void ConsoleGetChar(char c)
     }
     
     UART_CharTX(UartHandle.Instance, c);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+    ConsoleGetChar(tmpHALRxBuff);
 }

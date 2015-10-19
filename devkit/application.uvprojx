@@ -226,7 +226,7 @@
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>0</useUlib>
+            <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <RoSelD>3</RoSelD>
@@ -361,15 +361,15 @@
             <wLevel>2</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
-            <uC99>0</uC99>
+            <uC99>1</uC99>
             <useXO>0</useXO>
             <v6Lang>0</v6Lang>
             <v6LangP>0</v6LangP>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define></Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,USE_STM32F4_DISCO,</Define>
               <Undefine></Undefine>
-              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;.\cross-platform\inc;.\support\LwIP\system\OS;.\support\LwIP\src\include;.\support\LwIP\system;.\support\LwIP\test\unit;.\support\LwIP\src\include\ipv4</IncludePath>
+              <IncludePath>.\app\inc;.\common\inc;.\support\STM32F4xx_HAL_Driver\Inc;.\support\FreeRTOS\include;.\support\FreeRTOS\CMSIS_RTOS;.\app\conf;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;.\cross-platform\inc;.\support\LwIP\system\OS;.\support\LwIP\src\include;.\support\LwIP\system;.\support\LwIP\test\unit;.\support\LwIP\src\include\ipv4;..\..\project-dandelion\devkit\cross-platform\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -466,6 +466,11 @@
               <FileName>ethernetif.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\src\ethernetif.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\tcp_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1057,6 +1062,26 @@
               <FileType>5</FileType>
               <FilePath>.\support\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h</FilePath>
             </File>
+            <File>
+              <FileName>stm32f4xx_ll_fmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_fmc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_ll_fsmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_fsmc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_ll_sdmmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_sdmmc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_ll_usb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_HAL_Driver\Src\stm32f4xx_ll_usb.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1278,14 +1303,19 @@
           <GroupName>cross-platform</GroupName>
           <Files>
             <File>
-              <FileName>sensor_conversions.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\cross-platform\inc\sensor_conversions.h</FilePath>
-            </File>
-            <File>
               <FileName>sensor_conversions.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\cross-platform\src\sensor_conversions.c</FilePath>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\src\sensor_conversions.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_packets.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\inc\radio_packets.h</FilePath>
+            </File>
+            <File>
+              <FileName>sensor_conversions.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\inc\sensor_conversions.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1646,6 +1676,11 @@
               <FileName>udp.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\support\LwIP\src\include\lwip\udp.h</FilePath>
+            </File>
+            <File>
+              <FileName>etharp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\LwIP\src\netif\etharp.c</FilePath>
             </File>
           </Files>
         </Group>
