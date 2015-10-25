@@ -26,7 +26,7 @@
                 /* ======================================= *
                  *     G L O B A L   V A R I A B L E S     *
                  * ======================================= */
-extern SPI_HandleTypeDef SpiHandle;
+                 
                 /* ======================================= *
                  *      L O C A L   F U N C T I O N S      *
                  * ======================================= */
@@ -37,27 +37,27 @@ extern SPI_HandleTypeDef SpiHandle;
 
 void radio_hal_AssertShutdown(void)
 {
-    HAL_GPIO_WritePin(RADIO_SDL_GPIO_PORT, RADIO_SDL_PIN, GPIO_PIN_SET);
+    GPIO_SetBits(RADIO_SDL_GPIO_PORT, RADIO_SDL_PIN);
 }
 
 void radio_hal_DeassertShutdown(void)
 {
-	HAL_GPIO_WritePin(RADIO_SDL_GPIO_PORT, RADIO_SDL_PIN, GPIO_PIN_RESET);
+    GPIO_ResetBits(RADIO_SDL_GPIO_PORT, RADIO_SDL_PIN);
 }
 
 void radio_hal_ClearNsel(void)
 {
-    HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT, SPIx_NSS_PIN, GPIO_PIN_RESET);
+    GPIO_ResetBits(SPIn_NSS_GPIO_PORT, SPIn_NSS_PIN);
 }
 
 void radio_hal_SetNsel(void)
 {
-	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT, SPIx_NSS_PIN, GPIO_PIN_SET);
+    GPIO_SetBits(SPIn_NSS_GPIO_PORT, SPIn_NSS_PIN);
 }
 
 BIT radio_hal_NirqLevel(void)
 {
-    return HAL_GPIO_ReadPin(RADIO_NIRQ_GPIO_PORT, RADIO_NIRQ_PIN);
+    return GPIO_ReadInputDataBit(RADIO_NIRQ_GPIO_PORT, RADIO_NIRQ_PIN);
 }
 
 void radio_hal_SpiWriteByte(U8 byteToWrite)

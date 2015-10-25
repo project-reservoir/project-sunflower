@@ -48,6 +48,8 @@
 #include "task.h"
 #include "tcpip.h"
 #include "cmsis_os.h"
+#include "console.h"
+#include "radio.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -59,8 +61,10 @@
 #define MESSAGE4   "                    "
 
 /*--------------- Tasks Priority -------------*/
-#define DHCP_TASK_PRIO   osPriorityNormal      
-#define LED_TASK_PRIO    osPriorityNormal
+#define DHCP_TASK_PRIO      osPriorityNormal      
+#define LED_TASK_PRIO       osPriorityLow
+#define CONSOLE_TASK_PRIO   osPriorityNormal
+#define RADIO_TASK_PRIO     osPriorityHigh
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -81,18 +85,20 @@ extern void udpecho_init(void);
   */
 void ToggleLed4(void * pvParameters)
 {
-  while (1)
-  {   
-    test = xnetif.ip_addr.addr;
-    /*check if IP address assigned*/
-    if (test !=0) {
-      for( ;; ) {
-        /* toggle LED4 each 250ms */
-        STM_EVAL_LEDToggle(LED4);
-        vTaskDelay(250);
-      }
+    while (1)
+    {   
+        test = xnetif.ip_addr.addr;
+        /*check if IP address assigned*/
+        if (test != 0) 
+        {
+            while(1)
+            {
+                /* toggle LED4 each 250ms */
+                STM_EVAL_LEDToggle(LED4);
+                vTaskDelay(250);
+            }
+        }
     }
-  }
 }
 
 /**
@@ -102,44 +108,54 @@ void ToggleLed4(void * pvParameters)
   */
 int main(void)
 {
-  /*!< At this stage the microcontroller clock setting is already configured to 
+    // Needed for FreeRTOS (only use pre-emption priority values)
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
+
+    /*!< At this stage the microcontroller clock setting is already configured to 
        144 MHz, this is done through SystemInit() function which is called from
        startup file (startup_stm32f4xx.s) before to branch to application main.
        To reconfigure the default setting of SystemInit() function, refer to
        system_stm32f4xx.c file
      */
-  /*Initialize LCD and Leds */ 
-  LCD_LED_Init();
-  
-  /* configure ethernet (GPIOs, clocks, MAC, DMA) */ 
-  ETH_BSP_Config();
+    /*Initialize LCD and Leds */ 
+    LCD_LED_Init();
+
+    /* configure ethernet (GPIOs, clocks, MAC, DMA) */ 
+    ETH_BSP_Config();
     
-  /* Initilaize the LwIP stack */
-  LwIP_Init();
-  
-  /* Initialize tcp echo server */
-  tcpecho_init();
-  
-  /* Initialize udp echo server */
-  udpecho_init();
+    ConsoleTaskHwInit();
+    ConsoleTaskOSInit();
+    
+    RadioTaskHwInit();
+    RadioTaskOSInit();
+    
+    /* Initilaize the LwIP stack */
+    LwIP_Init();
+
+    /* Initialize tcp echo server */
+    tcpecho_init();
 
 #ifdef USE_DHCP
-  /* Start DHCPClient */
-  osThreadDef(DHCP_Thread, LwIP_DHCP_task, DHCP_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
-  osThreadCreate(osThread(DHCP_Thread), NULL);
-  //xTaskCreate(LwIP_DHCP_task, "DHCPClient", configMINIMAL_STACK_SIZE * 2, NULL, DHCP_TASK_PRIO, NULL);
+    /* Start DHCPClient */
+    osThreadDef(DHCP_Thread, LwIP_DHCP_task, DHCP_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
+    osThreadCreate(osThread(DHCP_Thread), NULL);
 #endif
-    
-  /* Start toogleLed4 task : Toggle LED4  every 250ms */
-  osThreadDef(LED_Thread, (os_pthread)ToggleLed4, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
-  osThreadCreate(osThread(LED_Thread), NULL);
-  //xTaskCreate(ToggleLed4, "LED4", configMINIMAL_STACK_SIZE, NULL, LED_TASK_PRIO, NULL);
-  
-  /* Start scheduler */
-  vTaskStartScheduler();
 
-  /* We should never get here as control is now taken by the scheduler */
-  for( ;; );
+    /* Start toogleLed4 task : Toggle LED4  every 250ms */
+    osThreadDef(LED_Thread, (os_pthread)ToggleLed4, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(LED_Thread), NULL);
+    
+    osThreadDef(Console_Thead, (os_pthread)ConsoleTask, CONSOLE_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(Console_Thead), NULL);
+    
+    osThreadDef(Radio_Thead, (os_pthread)RadioTask, RADIO_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
+    osThreadCreate(osThread(Radio_Thead), NULL);
+
+    /* Start scheduler */
+    vTaskStartScheduler();
+
+    /* We should never get here as control is now taken by the scheduler */
+    for( ;; );
 }
 
 /**
@@ -149,7 +165,7 @@ int main(void)
   */
 void LCD_LED_Init(void)
 {
-  STM_EVAL_LEDInit(LED4); 
+    STM_EVAL_LEDInit(LED4); 
 }
 
 void vApplicationStackOverflowHook(void)
@@ -179,12 +195,12 @@ void vApplicationMallocFailedHook(void)
   */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* User can add his own implementation to report the file name and line number,
+    /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
-  /* Infinite loop */
-  while (1)
-  {}
+    /* Infinite loop */
+    while (1)
+    {}
 }
 #endif
 

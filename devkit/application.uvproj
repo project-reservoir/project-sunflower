@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>Discover-More</TargetName>
+      <TargetName>devkit</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -44,8 +44,8 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\Discover-More\</OutputDirectory>
-          <OutputName>Project</OutputName>
+          <OutputDirectory>.\Objects\</OutputDirectory>
+          <OutputName>devkit</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -220,7 +220,7 @@
             <hadIRAM>1</hadIRAM>
             <hadXRAM>0</hadXRAM>
             <uocXRam>0</uocXRam>
-            <RvdsVP>1</RvdsVP>
+            <RvdsVP>2</RvdsVP>
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -367,7 +367,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F40XX, USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\;..\inc;..\src;.\support\CMSIS\Include;.\support\STM32F4x7_ETH_Driver\inc;.\support\STM32F4xx_StdPeriph_Driver\inc;.\support\STM32F4-Discovery;.\support\lwip_v1.3.2\port\STM32F4x7;.\support\lwip_v1.3.2\src\include;.\support\lwip_v1.3.2\src\include\ipv4;.\support\lwip_v1.3.2\src\include\lwip;.\support\lwip_v1.3.2\src\include\netif;.\support\lwip_v1.3.2\port\STM32F4x7\FreeRTOS;.\support\FreeRTOS\include;.\support\FreeRTOS\portable\RVDS\ARM_CM4F</IncludePath>
+              <IncludePath>.\app\inc;.\support\CMSIS\Include;.\support\STM32F4x7_ETH_Driver\inc;.\support\STM32F4xx_StdPeriph_Driver\inc;.\support\STM32F4-Discovery;.\support\lwip_v1.3.2\port\STM32F4x7;.\support\lwip_v1.3.2\src\include;.\support\lwip_v1.3.2\src\include\ipv4;.\support\lwip_v1.3.2\src\include\lwip;.\support\lwip_v1.3.2\src\include\netif;.\support\lwip_v1.3.2\port\STM32F4x7\FreeRTOS;.\support\FreeRTOS\include;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\FreeRTOS\CMSIS_RTOS</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -571,9 +571,9 @@
           <GroupName>MDK-ARM</GroupName>
           <Files>
             <File>
-              <FileName>startup_stm32f4xx.s</FileName>
+              <FileName>startup_stm32f407xx.s</FileName>
               <FileType>2</FileType>
-              <FilePath>.\app\startup_stm32f4xx.s</FilePath>
+              <FilePath>.\app\startup_stm32f407xx.s</FilePath>
             </File>
           </Files>
         </Group>

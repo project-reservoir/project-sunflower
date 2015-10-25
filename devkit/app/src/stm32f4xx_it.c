@@ -47,6 +47,9 @@
 #include "stm32f4xx_it.h"
 #include "main.h"
 #include "stm32f4x7_eth.h"
+#include "console.h"
+#include "uart.h"
+#include "radio.h"
 
 /* Scheduler includes */
 #include "FreeRTOS.h"
@@ -56,18 +59,10 @@
 /* lwip includes */
 #include "lwip/sys.h"
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-extern xSemaphoreHandle s_xSemaphore;
-/* Private function prototypes -----------------------------------------------*/
-extern void xPortSysTickHandler(void); 
-/* Private functions ---------------------------------------------------------*/
 
-/******************************************************************************/
-/*            Cortex-M4 Processor Exceptions Handlers                         */
-/******************************************************************************/
+extern xSemaphoreHandle s_xSemaphore;
+
+extern void xPortSysTickHandler(void); 
 
 /**
   * @brief   This function handles NMI exception.
@@ -173,6 +168,30 @@ void ETH_IRQHandler(void)
   if ( xHigherPriorityTaskWoken != pdFALSE ) {
     portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
   }
+}
+
+void EXTI1_IRQHandler(void)
+{
+    EXTI_ClearFlag(RADIO_NIRQ_EXTI_LINE);
+    SignalRadioIRQ();
+}
+
+void USARTn_Handler(void)
+{    
+    if((USARTn->SR & USART_SR_RXNE) == USART_SR_RXNE)
+    {
+        ConsoleGetChar(USARTn->DR);
+    }
+    
+    if((USARTn->SR & USART_SR_TC) == USART_SR_TC && (USARTn->CR1 & USART_CR1_TCIE) == USART_CR1_TCIE)
+    {
+        UART_ContinueTX(USARTn);
+    }
+    
+    if((USARTn->SR & USART_SR_ORE) == USART_SR_ORE)
+    {
+        USARTn->SR = USARTn->SR & ~USART_SR_ORE;
+    }
 }
 
 /******************************************************************************/

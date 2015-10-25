@@ -1,13 +1,11 @@
 #include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal_uart.h"
+#include "stm32f4xx.h"
 #include "uart.h"
 #include "console.h"
 #include "app_header.h"
 #include "debug.h"
 #include <string.h>
 
-UART_HandleTypeDef  UartHandle;
 osMessageQId        uartRxMsgQ;
 
 uint8_t             rxBuff[CONSOLE_MAX_MSG_SIZE];
@@ -27,87 +25,47 @@ static void         processDebugCommand(char* str, uint8_t len);
 
 void ConsoleTaskHwInit(void)
 {
-    /*
-    GPIO_InitTypeDef  GPIO_InitStruct;
+    GPIO_InitTypeDef   GPIO_InitStructure;
+    NVIC_InitTypeDef   NVIC_InitStructure;
     
-    //##-1- Enable peripherals and GPIO Clocks #################################
-    // Enable GPIO TX/RX clock 
-    USARTx_TX_GPIO_CLK_ENABLE();
-    USARTx_RX_GPIO_CLK_ENABLE();
-    // Enable USART3 clock 
-    USARTx_CLK_ENABLE(); 
+    USARTn_TX_GPIO_CLK_ENABLE();
+    USARTn_RX_GPIO_CLK_ENABLE();
+    USARTn_CLK_ENABLE(); 
+    
+    GPIO_InitStructure.GPIO_Pin   = USARTn_TX_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_Init(USARTn_TX_GPIO_PORT, &GPIO_InitStructure);
+    
+    GPIO_InitStructure.GPIO_Pin   = USARTn_RX_PIN;
+    GPIO_Init(USARTn_RX_GPIO_PORT, &GPIO_InitStructure);
+    
+    GPIO_PinAFConfig(USARTn_TX_GPIO_PORT, USARTn_TX_PIN_SOURCE, USARTn_TX_AF);
+    GPIO_PinAFConfig(USARTn_RX_GPIO_PORT, USARTn_RX_PIN_SOURCE, USARTn_RX_AF);    
 
-    //##-2- Configure peripheral GPIO ##########################################
-    // UART TX GPIO pin configuration  
-    GPIO_InitStruct.Pin       = USARTx_TX_PIN;
-    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull      = GPIO_NOPULL;
-    GPIO_InitStruct.Speed     = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate = USARTx_TX_AF;
-
-    HAL_GPIO_Init(USARTx_TX_GPIO_PORT, &GPIO_InitStruct);
-
-    // UART RX GPIO pin configuration
-    GPIO_InitStruct.Pin = USARTx_RX_PIN;
-    GPIO_InitStruct.Alternate = USARTx_RX_AF;
-
-    HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
-
-    // ##-3- Configure the NVIC for UART ########################################
-    // NVIC for USART1 
-    HAL_NVIC_SetPriority(USARTx_IRQn, 7, 1);
-    HAL_NVIC_EnableIRQ(USARTx_IRQn);*/
-}
-
-void HAL_UART_MspInit(UART_HandleTypeDef *huart)
-{  
-    GPIO_InitTypeDef  GPIO_InitStruct;
-
-    /*##-1- Enable peripherals and GPIO Clocks #################################*/
-    /* Enable GPIO TX/RX clock */
-    USARTx_TX_GPIO_CLK_ENABLE();
-    USARTx_RX_GPIO_CLK_ENABLE();
-    /* Enable USART2 clock */
-    USARTx_CLK_ENABLE(); 
-
-    /*##-2- Configure peripheral GPIO ##########################################*/  
-    /* UART TX GPIO pin configuration  */
-    GPIO_InitStruct.Pin       = USARTx_TX_PIN;
-    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull      = GPIO_NOPULL;
-    GPIO_InitStruct.Speed     = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate = USARTx_TX_AF;
-
-    HAL_GPIO_Init(USARTx_TX_GPIO_PORT, &GPIO_InitStruct);
-
-    /* UART RX GPIO pin configuration  */
-    GPIO_InitStruct.Pin = USARTx_RX_PIN;
-    GPIO_InitStruct.Alternate = USARTx_RX_AF;
-
-    HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
-
-    /*##-3- Configure the NVIC for UART ########################################*/
-    /* NVIC for USART1 */
-    HAL_NVIC_SetPriority(USARTx_IRQn, 7, 1);
-    HAL_NVIC_EnableIRQ(USARTx_IRQn);
+    NVIC_InitStructure.NVIC_IRQChannel = USARTn_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_LOWEST_INTERRUPT_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 }
 
 void ConsoleTaskOSInit(void)
 {
+    USART_InitTypeDef config;
     osMessageQDef(UARTRxMsgQueue, CONSOLE_MSG_Q_SIZE, char*);
     uartRxMsgQ = osMessageCreate(osMessageQ(UARTRxMsgQueue), NULL);
     
-    UartHandle.Instance          = USARTx;
-  
-    UartHandle.Init.BaudRate     = 9600;
-    UartHandle.Init.WordLength   = UART_WORDLENGTH_8B;
-    UartHandle.Init.StopBits     = UART_STOPBITS_1;
-    UartHandle.Init.Parity       = UART_PARITY_NONE;
-    UartHandle.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-    UartHandle.Init.Mode         = UART_MODE_TX_RX;
-    UartHandle.Init.OverSampling = UART_OVERSAMPLING_16;
+    config.USART_BaudRate               = 115200;
+    config.USART_HardwareFlowControl    = USART_HardwareFlowControl_None;
+    config.USART_Mode                   = USART_Mode_Rx | USART_Mode_Tx;
+    config.USART_Parity                 = USART_Parity_No;
+    config.USART_StopBits               = USART_StopBits_1;
+    config.USART_WordLength             = USART_WordLength_8b;
 
-    HAL_UART_Init(&UartHandle) == HAL_OK ? assert_param(1) : assert_param(0);
+    USART_Init(USARTn, &config);
 }
 
 void ConsoleTask(void)
@@ -115,13 +73,11 @@ void ConsoleTask(void)
     osEvent msgQueueEvent;
     char* rxChars = NULL;
     
+    UART_Start(USARTn);
+    
     while(1)
     {
-        UART_StartRX(USARTx);
-        /*if(HAL_UART_Receive_IT(&UartHandle, &tmpHALRxBuff, 1) != HAL_OK)
-        {
-            assert_param(0);
-        }*/
+        UART_StartRX(USARTn);
         
         console_task_started = 1;
         
@@ -143,6 +99,8 @@ void processString(char* str)
 {
     uint8_t len = string_len(str);
     uint8_t i;
+    
+    (void)i;
     
     ConsolePrint("\r\n");
     
@@ -235,25 +193,19 @@ uint8_t string_len(char* str)
 void ConsolePrint(char* text)
 {
     uint8_t i = string_len(text);
-    
-    /*if(HAL_UART_Transmit_IT(&UartHandle, (uint8_t*)text, i )!= HAL_OK)
-    {
-        assert_param(0);
-    }*/
-    
-    
+        
     while(!console_task_started)
     {
         osDelay(10);
     }
     
     // While the UART is not ready for TX, spin
-    while(UART_ReadyTX(UartHandle.Instance) != UART_OK)
+    while(UART_ReadyTX(USARTn) != UART_OK)
     {
         osDelay(10);
     }
     
-    UART_StartTX(UartHandle.Instance, text, i);
+    UART_StartTX(USARTn, text, i);
 }
 
 void ConsoleGetChar(char c)
@@ -280,10 +232,5 @@ void ConsoleGetChar(char c)
         osMessagePut(uartRxMsgQ, (uint32_t)rxBuff, osWaitForever);
     }
     
-    UART_CharTX(UartHandle.Instance, c);
-}
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
-    ConsoleGetChar(tmpHALRxBuff);
+    UART_CharTX(USARTn, c);
 }

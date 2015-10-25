@@ -7,6 +7,11 @@ char* uartTxBuff = NULL;
 uint8_t txSize = 0;
 uint8_t txPos = 0;
 
+void UART_Start(USART_TypeDef* uart)
+{
+    uart->CR1 |= USART_CR1_UE;
+}
+
 void UART_CharTX(USART_TypeDef* uart, char c)
 {
     uart->DR = c;
