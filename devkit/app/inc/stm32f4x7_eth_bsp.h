@@ -18,14 +18,14 @@
   * <h2><center>&copy; Portions COPYRIGHT 2011 STMicroelectronics</center></h2>
   ******************************************************************************
   */
-/**
+ /**
   ******************************************************************************
   * <h2><center>&copy; Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.</center></h2>
   * @file    stm32f4x7_eth_bsp.h
   * @author  CMP Team
   * @version V1.0.0
   * @date    28-December-2012
-  * @brief   Header for stm32f4x7_eth_bsp.c file.       
+  * @brief   Header for stm32f4x7_eth_bsp.c file.    
   *          Modified to support the STM32F4DISCOVERY, STM32F4DIS-BB and
   *          STM32F4DIS-LCD modules. 
   ******************************************************************************
@@ -38,7 +38,7 @@
   * OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE CODING INFORMATION
   * CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
   ******************************************************************************
-  */
+  */ 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4x7_ETH_BSP_H
 #define __STM32F4x7_ETH_BSP_H

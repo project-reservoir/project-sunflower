@@ -1,195 +1,171 @@
-#include "hwctrl.h"
-#include "stm32f4xx_hal.h"
-#include "led_task.h"
-#include "radio.h"
+/**
+  ******************************************************************************
+  * @file    main.c
+  * @author  MCD Application Team
+  * @version V1.0.0
+  * @date    31-October-2011
+  * @brief   Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
+  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
+  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
+  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  *
+  * <h2><center>&copy; Portions COPYRIGHT 2011 STMicroelectronics</center></h2>
+  ******************************************************************************
+  */
+ /**
+  ******************************************************************************
+  * <h2><center>&copy; Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.</center></h2>
+  * @file    main.c
+  * @author  CMP Team
+  * @version V1.0.0
+  * @date    28-December-2012
+  * @brief   Main program body     
+  *          Modified to support the STM32F4DISCOVERY, STM32F4DIS-BB and
+  *          STM32F4DIS-LCD modules. 
+  ******************************************************************************
+  * @attention
+  *
+  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  * TIME. AS A RESULT, Embest SHALL NOT BE HELD LIABLE FOR ANY DIRECT, INDIRECT
+  * OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING FROM THE CONTENT
+  * OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE CODING INFORMATION
+  * CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  ******************************************************************************
+  */ 
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4x7_eth.h"
+#include "netconf.h"
+#include "main.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "tcpip.h"
 #include "cmsis_os.h"
-#include "console.h"
-#include "tcp_task.h"
-#include "ethernetif.h"
-#include "lwip/netif.h"
-#include "lwip/tcpip.h"
 
-/*Static IP ADDRESS*/
-#define IP_ADDR0   169
-#define IP_ADDR1   254
-#define IP_ADDR2   129
-#define IP_ADDR3   100
-   
-/*NETMASK*/
-#define NETMASK_ADDR0   255
-#define NETMASK_ADDR1   255
-#define NETMASK_ADDR2   0
-#define NETMASK_ADDR3   0
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
 
-/*Gateway Address*/
-#define GW_ADDR0   169
-#define GW_ADDR1   254
-#define GW_ADDR2   129
-#define GW_ADDR3   99
+/*--------------- LCD Messages ---------------*/
+#define MESSAGE1   "     STM32F4x7      "
+#define MESSAGE2   "  STM32F-4 Series   "
+#define MESSAGE3   " UDP/TCP EchoServer "
+#define MESSAGE4   "                    "
 
-static void Netif_Config(void);
+/*--------------- Tasks Priority -------------*/
+#define DHCP_TASK_PRIO   osPriorityNormal      
+#define LED_TASK_PRIO    osPriorityNormal
 
-/* network interface structure */
-struct netif gnetif;
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+extern struct netif xnetif;
+__IO uint32_t test;
+ 
+/* Private function prototypes -----------------------------------------------*/
+void LCD_LED_Init(void);
+extern void tcpecho_init(void);
+extern void udpecho_init(void);
 
-/* Semaphore to signal Ethernet Link state update */
-osSemaphoreId Netif_LinkSemaphore = NULL;
+/* Private functions ---------------------------------------------------------*/
 
-/* Ethernet link thread Argument */
-struct link_str link_arg;
-
-unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
+/**
+  * @brief  Toggle Led4 task
+  * @param  pvParameters not used
+  * @retval None
+  */
+void ToggleLed4(void * pvParameters)
 {
-  unsigned portBASE_TYPE fpriority = tskIDLE_PRIORITY;
-  
-  if (priority != osPriorityError) {
-    fpriority += (priority - osPriorityIdle);
+  while (1)
+  {   
+    test = xnetif.ip_addr.addr;
+    /*check if IP address assigned*/
+    if (test !=0) {
+      for( ;; ) {
+        /* toggle LED4 each 250ms */
+        STM_EVAL_LEDToggle(LED4);
+        vTaskDelay(250);
+      }
+    }
   }
+}
+
+/**
+  * @brief  Main program.
+  * @param  None
+  * @retval None
+  */
+int main(void)
+{
+  /*!< At this stage the microcontroller clock setting is already configured to 
+       144 MHz, this is done through SystemInit() function which is called from
+       startup file (startup_stm32f4xx.s) before to branch to application main.
+       To reconfigure the default setting of SystemInit() function, refer to
+       system_stm32f4xx.c file
+     */
+  /*Initialize LCD and Leds */ 
+  LCD_LED_Init();
   
-  return fpriority;
+  /* configure ethernet (GPIOs, clocks, MAC, DMA) */ 
+  ETH_BSP_Config();
+    
+  /* Initilaize the LwIP stack */
+  LwIP_Init();
+  
+  /* Initialize tcp echo server */
+  tcpecho_init();
+  
+  /* Initialize udp echo server */
+  udpecho_init();
+
+#ifdef USE_DHCP
+  /* Start DHCPClient */
+  osThreadDef(DHCP_Thread, LwIP_DHCP_task, DHCP_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
+  osThreadCreate(osThread(DHCP_Thread), NULL);
+  //xTaskCreate(LwIP_DHCP_task, "DHCPClient", configMINIMAL_STACK_SIZE * 2, NULL, DHCP_TASK_PRIO, NULL);
+#endif
+    
+  /* Start toogleLed4 task : Toggle LED4  every 250ms */
+  osThreadDef(LED_Thread, (os_pthread)ToggleLed4, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+  osThreadCreate(osThread(LED_Thread), NULL);
+  //xTaskCreate(ToggleLed4, "LED4", configMINIMAL_STACK_SIZE, NULL, LED_TASK_PRIO, NULL);
+  
+  /* Start scheduler */
+  vTaskStartScheduler();
+
+  /* We should never get here as control is now taken by the scheduler */
+  for( ;; );
+}
+
+/**
+  * @brief  Initializes the STM324xG-EVAL's LCD and LEDs resources.
+  * @param  None
+  * @retval None
+  */
+void LCD_LED_Init(void)
+{
+  STM_EVAL_LEDInit(LED4); 
 }
 
 void vApplicationStackOverflowHook(void)
 {
-    HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
-    __BKPT(0);
+    //TODO: fix 
+    //HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
+    //__BKPT(0);
+    while(1);
 }
 
 void vApplicationMallocFailedHook(void)
 {
-    HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
-    __BKPT(0);
-}
-
-static void TCPStartThread()
-{
-  
-  /* Create tcp_ip stack thread */
-  tcpip_init(NULL, NULL);
-  
-  /* Initialize the LwIP stack */
-  Netif_Config();
-  
-  /* Initialize tcp echo server */
-  tcpecho_init();
-
-  for( ;; )
-  {
-    /* Delete the Init Thread*/ 
-    osThreadTerminate(NULL);
-  }
-}
-
-int main(void)
-{	
-	xTaskHandle ledTaskHandle;
-    xTaskHandle radioTaskHandle;
-    xTaskHandle startTaskHandle;
-    xTaskHandle consoleTaskHandle;
-    
-    // Initialize the ST Micro Board Support Library
-    HAL_Init();
-    
-    // Configure the system clock
-    SystemClock_Config();
-    
-    // Setup external ports on the MCU
-    HwCtrl_Init();
-    
-    RadioTaskOSInit();
-    ConsoleTaskOSInit();
-    	
-    // TODO: use CMSIS_OS functions for this to remove dependency on makeFreeRtosPriority()
-    xTaskCreate(ConsoleTask,
-                "ConsoleTask",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &consoleTaskHandle);
-    
-    xTaskCreate(RadioTask,
-                "RadioTask",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &radioTaskHandle);
-    
-    // Create an LED blink tasks	
-    xTaskCreate(LedBlinkTask,
-                "LEDTask",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &ledTaskHandle);
-    
-    // Create an LED blink tasks	
-    xTaskCreate(TCPStartThread,
-                "TCPStartThread",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &startTaskHandle);
-    
-    // Start scheduler
-    vTaskStartScheduler();
-
-    // We should never get here as control is now taken by the scheduler
-    for(;;);
-}
-
-void Netif_Config(void)
-{
-  struct ip_addr ipaddr;
-  struct ip_addr netmask;
-  struct ip_addr gw;	
-  
-  /* IP address setting */
-  IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
-  IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
-  IP4_ADDR(&gw, GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-  
-  /* - netif_add(struct netif *netif, struct ip_addr *ipaddr,
-  struct ip_addr *netmask, struct ip_addr *gw,
-  void *state, err_t (* init)(struct netif *netif),
-  err_t (* input)(struct pbuf *p, struct netif *netif))
-  
-  Adds your network interface to the netif_list. Allocate a struct
-  netif and pass a pointer to this structure as the first argument.
-  Give pointers to cleared ip_addr structures when using DHCP,
-  or fill them with sane numbers otherwise. The state pointer may be NULL.
-  
-  The init function pointer must point to a initialization function for
-  your ethernet netif interface. The following code illustrates it's use.*/
-  
-  netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
-  
-  /*  Registers the default network interface. */
-  netif_set_default(&gnetif);
-  
-  if (netif_is_link_up(&gnetif))
-  {
-    /* When the netif is fully configured this function must be called.*/
-    netif_set_up(&gnetif);
-  }
-  else
-  {
-    /* When the netif link is down this function must be called */
-    netif_set_down(&gnetif);
-  }
-
-  /* Set the link callback function, this function is called on change of link status*/
-  netif_set_link_callback(&gnetif, ethernetif_update_config);
-  
-  /* create a binary semaphore used for informing ethernetif of frame reception */
-  osSemaphoreDef(Netif_SEM);
-  Netif_LinkSemaphore = osSemaphoreCreate(osSemaphore(Netif_SEM) , 1 );
-  
-  link_arg.netif = &gnetif;
-  link_arg.semaphore = Netif_LinkSemaphore;
-  
-  /* Create the Ethernet link handler thread */
-  osThreadDef(LinkThr, ethernetif_set_link, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
-  osThreadCreate(osThread(LinkThr), &link_arg);
+    //TODO: fix 
+    //HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
+    //__BKPT(0);
+    while(1);
 }
 
 #ifdef  USE_FULL_ASSERT
@@ -211,3 +187,6 @@ void assert_failed(uint8_t* file, uint32_t line)
   {}
 }
 #endif
+
+
+/*********** Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.*****END OF FILE****/

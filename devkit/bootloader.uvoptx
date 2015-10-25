@@ -237,7 +237,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\ethernetif.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\ethernetif.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -285,7 +285,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\system_interrupts.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\system_interrupts.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -301,7 +301,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\tcp_task.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\tcp_task.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -317,7 +317,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\ethernetif.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\ethernetif.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -333,7 +333,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\ethernetif.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\ethernetif.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -349,7 +349,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\system_interrupts.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\system_interrupts.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -365,7 +365,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\console.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\console.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -381,7 +381,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\uart.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\uart.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -397,7 +397,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\system_interrupts.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\system_interrupts.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -413,7 +413,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\app\src\system_interrupts.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\app\src\system_interrupts.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -429,7 +429,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>&lt;1&gt;.\support\LwIP\src\netif\etharp.c</Filename>
+          <Filename>C:\Users\Stuart Alldritt\Documents\GitHub\project-sunflower\devkit\support\LwIP\src\netif\etharp.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
@@ -569,22 +569,6 @@
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
-  </Group>
-
-  <Group>
-    <GroupName>::CMSIS</GroupName>
-    <tvExp>0</tvExp>
-    <tvExpOptDlg>0</tvExpOptDlg>
-    <cbSel>0</cbSel>
-    <RteFlg>1</RteFlg>
-  </Group>
-
-  <Group>
-    <GroupName>::Device</GroupName>
-    <tvExp>1</tvExp>
-    <tvExpOptDlg>0</tvExpOptDlg>
-    <cbSel>0</cbSel>
-    <RteFlg>1</RteFlg>
   </Group>
 
 </ProjectOpt>
