@@ -1107,6 +1107,11 @@
               <FileType>5</FileType>
               <FilePath>.\app\conf\radio_config.h</FilePath>
             </File>
+            <File>
+              <FileName>lwipopts.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\conf\lwipopts.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

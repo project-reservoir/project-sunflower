@@ -52,7 +52,8 @@ static void tcpecho_thread(void *arg)
   u16_t len;
   ip_addr_t ip;
   
-  IP4_ADDR(&ip, 108, 168, 14, 205);
+  //IP4_ADDR(&ip, 108, 168, 14, 205);
+  IP4_ADDR(&ip, 169, 254, 129, 99);
   
   LWIP_UNUSED_ARG(arg);
 

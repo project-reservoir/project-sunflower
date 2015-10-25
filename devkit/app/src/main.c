@@ -10,27 +10,27 @@
 #include "lwip/tcpip.h"
 
 /*Static IP ADDRESS*/
-#define IP_ADDR0   10
-#define IP_ADDR1   0
-#define IP_ADDR2   0
-#define IP_ADDR3   4
+#define IP_ADDR0   169
+#define IP_ADDR1   254
+#define IP_ADDR2   129
+#define IP_ADDR3   100
    
 /*NETMASK*/
 #define NETMASK_ADDR0   255
 #define NETMASK_ADDR1   255
-#define NETMASK_ADDR2   255
+#define NETMASK_ADDR2   0
 #define NETMASK_ADDR3   0
 
 /*Gateway Address*/
-#define GW_ADDR0   10
-#define GW_ADDR1   0
-#define GW_ADDR2   0
-#define GW_ADDR3   1  
+#define GW_ADDR0   169
+#define GW_ADDR1   254
+#define GW_ADDR2   129
+#define GW_ADDR3   99
 
 static void Netif_Config(void);
 
 /* network interface structure */
-struct netif gnetif; 
+struct netif gnetif;
 
 /* Semaphore to signal Ethernet Link state update */
 osSemaphoreId Netif_LinkSemaphore = NULL;
@@ -123,12 +123,12 @@ int main(void)
                 &ledTaskHandle);
     
     // Create an LED blink tasks	
-    /*xTaskCreate(TCPStartThread,
+    xTaskCreate(TCPStartThread,
                 "TCPStartThread",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 makeFreeRtosPriority(osPriorityNormal),
-                &startTaskHandle);*/
+                &startTaskHandle);
     
     // Start scheduler
     vTaskStartScheduler();
