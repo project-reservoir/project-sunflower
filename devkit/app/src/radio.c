@@ -20,7 +20,9 @@ tRadioConfiguration*    pRadioConfiguration                 = &RadioConfiguratio
 uint8_t customRadioPacket[RADIO_MAX_PACKET_LENGTH];
 
 // Local variables
-static uint8_t rxBuff[RADIO_MAX_PACKET_LENGTH];
+static uint8_t          rxBuff[RADIO_MAX_PACKET_LENGTH];
+
+static NetworkMember_t  networkTable[MAX_NETWORK_MEMBERS];
 
 static RadioTaskState radioTaskState = CONNECTED;
 static NetworkInfo    network;
@@ -191,6 +193,8 @@ void RadioTask(void)
                         if(msgQueueEvent.status == osEventMessage)
                         {
                             msg = (RadioMessage*)(msgQueueEvent.value.p);
+                            ((generic_message_t*)(msg->pData))->dst = msg->dest;
+                            ((generic_message_t*)(msg->pData))->src = RadioGetMACAddress();
                             
                             // Transmit the packet to the radio hardware
                             Radio_StartTx_Variable_Packet(pRadioConfiguration->Radio_ChannelNumber, msg->pData, msg->size);
@@ -217,12 +221,12 @@ void RadioTask(void)
 
 // The pointer passed into this function should have been allocated using 
 // the osAlloc() routine: it will be freed using the osFree routine
-void SendToBaseStation(uint8_t* data, uint8_t size)
+void SendToDevice(uint8_t* data, uint8_t size, uint32_t mac)
 {
     RadioMessage* message = pvPortMalloc(sizeof(RadioMessage));
     message->pData = data;
     message->size = size;
-    message->dest = network.baseStationMac; // TODO: what if we disconnect from the network and connect to a new base station when there are messages in the queue? This would result in packet loss
+    message->dest = mac;
     
     // TODO: Check that this actually succeeded, and don't block forever.
     //       Might need to return a status to indicate to calling function that we failed to send message
@@ -343,55 +347,68 @@ void RadioTaskHandleIRQ(void)
         
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
-        radio_message_t* message = (radio_message_t*)rxBuff;
-        radio_message_t* generic_msg;
+        generic_message_t* message = (generic_message_t*)rxBuff;
+        generic_message_t* generic_msg;
         
-        switch(message->generic.cmd)
+        if(message->dst == RadioGetMACAddress() || message->dst == 0xFFFFFFFF)
         {
-            // The base station has requested info from us: reply with it
-            case DEVICE_INFO:
-                // TODO: Unpack the response
-                // TODO: Store the response for later sending to Bouquet
-                break;
-            
-            case SENSOR_MSG:
-                DEBUG("Sensor Message\r\n");
-                sensorData = ParseSensorMessage(rxBuff);
-                // TODO: Store the response for later sending to Bouquet
-                break;
-            
-            case FW_UPD_START:
-                // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
-                break;
-            
-            case FW_UPD_END:
-                // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
-                break;
+            switch(message->cmd)
+            {
+                // The base station has requested info from us: reply with it
+                case DEVICE_INFO:
+                    // TODO: Store the response for later sending to Bouquet
+                    break;
                 
-            case FW_UPD_PAYLOAD:
-                // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
-                break;
-            
-            case PING:
-                DEBUG("PING\r\n");
-                generic_msg = pvPortMalloc(sizeof(radio_message_t));
-            
-                // TODO: check we didn't run out of RAM (we should catch this in the 
-                //       application Malloc failed handler, but just in case)
-            
-                generic_msg->ping.cmd = PONG;
-            
-                SendToBroadcast((uint8_t*)generic_msg, sizeof(radio_message_t));
-                break;
+                case SENSOR_MSG:
+                    DEBUG("Sensor Message\r\n");
+                    // TODO: Store the response for later sending to Bouquet
+                    break;
+                
+                case FW_UPD_START:
+                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                    break;
+                
+                case FW_UPD_END:
+                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                    break;
+                    
+                case FW_UPD_PAYLOAD:
+                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                    break;
+                
+                case PING:
+                    DEBUG("PING\r\n");
+                    generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                
+                    // TODO: check we didn't run out of RAM (we should catch this in the 
+                    //       application Malloc failed handler, but just in case)
+                
+                    generic_msg->cmd = PONG;
+                    generic_msg->src = RadioGetMACAddress();
+                    generic_msg->dst = message->src;
+                
+                    SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                    break;
 
-            case PONG:
-				INFO("PONG");
-                break;
+                case PONG:
+                    INFO("PONG\r\n");
+                    break;
+                
+                case ANNOUNCE:
+                    DEBUG("ANNOUNCE RECEIVED\r\n");
+                    generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                
+                    // TODO: check we didn't run out of RAM (we should catch this in the 
+                    //       application Malloc failed handler, but just in case)
+                
+                    generic_msg->cmd = JOIN;
+                    generic_msg->src = RadioGetMACAddress();
+                    generic_msg->dst = message->src;
+                
+                    SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                    break;
+            }
         }
-        
-        //HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
-        //osDelay(200);
-        //HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
     }
     
     // CRC_ERROR
@@ -417,64 +434,8 @@ void RadioTaskHandleIRQ(void)
     Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
 }
 
-// Accepts a 20 byte sensor message and converts it to a sensor data type
-SensorData ParseSensorMessage(uint8_t* radioMessage)
+uint32_t RadioGetMACAddress(void)
 {
-    uint16_t tmp = 0;
-    SensorData retVal;
-    
-    retVal.tempChip = 0.0;
-    retVal.tempRadio = 0.0;
-    
-    //moist 0
-    tmp = (radioMessage[0] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[1]) & 0x00FF;  // LSB
-    retVal.moist0 = SMS_To_Float(tmp);
-    
-    // moist 1
-    tmp = (radioMessage[2] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[3]) & 0x00FF;  // LSB
-    retVal.moist1 = SMS_To_Float(tmp);
-    
-    // moist 2
-    tmp = (radioMessage[4] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[5]) & 0x00FF;  // LSB
-    retVal.moist2 = SMS_To_Float(tmp);
-    
-    // humid    
-    tmp = (radioMessage[6] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[7]) & 0x00FF;  // LSB
-    retVal.humid = HTU21D_Humid_To_Float(tmp);
-
-    // temp 0    
-    tmp = (radioMessage[8] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[9]) & 0x00FF;  // LSB
-    retVal.temp0 = TMP102_To_Float(tmp);
-
-    // temp 1
-    tmp = (radioMessage[10] << 8) & 0xFF00;       // MSB
-    tmp |= ((uint16_t)radioMessage[11]) & 0x00FF; // LSB
-    retVal.temp1 = TMP102_To_Float(tmp);
-
-    // temp 2
-    tmp = (radioMessage[12] << 8) & 0xFF00;       // MSB
-    tmp |= ((uint16_t)radioMessage[13]) & 0x00FF; // LSB
-    retVal.temp2 = TMP102_To_Float(tmp);
-
-    // air temp
-    tmp = (radioMessage[14] << 8) & 0xFF00;       // MSB
-    tmp |= ((uint16_t)radioMessage[15]) & 0x00FF; // LSB
-    retVal.tempAir = HTU21D_Temp_To_Float(tmp);
-    
-    /*
-    
-    // battery level
-    radioMessage[16] = 0x00;
-    radioMessage[17] = 0x00;
-    
-    // solar level
-    radioMessage[18] = 0x00;
-    radioMessage[19] = 0x00;*/
-    
-    return retVal;
+    return *((uint32_t*)0x1FFF7A10);
 }
+

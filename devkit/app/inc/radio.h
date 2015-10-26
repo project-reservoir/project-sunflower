@@ -53,12 +53,19 @@
 #define PACKET_RX                        (1 << 4)
 #define PACKET_SENT                      (1 << 5)
 
+#define MAX_NETWORK_MEMBERS              1024
+
 // Typedefs
 typedef enum RadioTaskState_t {
     CONNECTED,
     CONNECTING,
     SEARCHING
 } RadioTaskState;
+
+typedef enum RadioTaskWakeupReason_t {
+    RADIO_IRQ_DETECTED,
+    RADIO_TX_NEEDED
+} RadioTaskWakeupReason;
 
 typedef struct NetworkInfo_t {
     uint32_t baseStationMac;
@@ -83,19 +90,19 @@ typedef struct
     uint8_t   Radio_CustomPayload[RADIO_MAX_PACKET_LENGTH];
 } tRadioConfiguration;
 
-typedef enum RadioTaskWakeupReason_t {
-    RADIO_IRQ_DETECTED,
-    RADIO_TX_NEEDED
-} RadioTaskWakeupReason;
+typedef struct {
+    uint32_t mac_address;
+} NetworkMember_t;
 
 // OS Task related functions
 void RadioTaskHwInit(void);
 void RadioTaskOSInit(void);
 void RadioTask(void);
 void RadioTaskHandleIRQ(void);
+uint32_t RadioGetMACAddress(void);
 
 // Public Radio API
-void SendToBaseStation(uint8_t* data, uint8_t size);
+void SendToDevice(uint8_t* data, uint8_t size, uint32_t mac);
 void SendToBroadcast(uint8_t* data, uint8_t size);
 void SignalRadioIRQ(void);
 
