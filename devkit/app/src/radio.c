@@ -19,8 +19,7 @@ tRadioConfiguration*    pRadioConfiguration                 = &RadioConfiguratio
 
 uint8_t customRadioPacket[RADIO_MAX_PACKET_LENGTH];
 
-// Local variables 
-static uint8_t txBuff[RADIO_MAX_PACKET_LENGTH];
+// Local variables
 static uint8_t rxBuff[RADIO_MAX_PACKET_LENGTH];
 
 static RadioTaskState radioTaskState = CONNECTED;
@@ -67,9 +66,8 @@ void RadioTaskOSInit(void)
 
 void RadioTaskHwInit(void)
 {   
-    GPIO_InitTypeDef   GPIO_InitStructure;
-    NVIC_InitTypeDef   NVIC_InitStructure;
-    EXTI_InitTypeDef EXTI_InitStructure;
+    GPIO_InitTypeDef    GPIO_InitStructure;
+    EXTI_InitTypeDef    EXTI_InitStructure;
     
     SPIn_SCK_GPIO_CLK_ENABLE();
     SPIn_MISO_GPIO_CLK_ENABLE();
@@ -305,13 +303,16 @@ void Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRadioPacket, uin
 
 void Radio_StartRX(uint8_t channel)
 {
-  // Read ITs, clear pending ones
-  si446x_get_int_status(0u, 0u, 0u);
+    // Read ITs, clear pending ones
+    si446x_get_int_status(0u, 0u, 0u);
 
-  /* Start Receiving packet, channel 0, START immediately, Packet n bytes long */
-  si446x_start_rx(channel, 0u, RadioConfiguration.Radio_PacketLength,
+    // Reset the FIFO
+    si446x_fifo_info(SI446X_CMD_FIFO_INFO_ARG_FIFO_RX_BIT);
+
+    /* Start Receiving packet, channel 0, START immediately, Packet n bytes long */
+    si446x_start_rx(channel, 0u, RadioConfiguration.Radio_PacketLength,
                   SI446X_CMD_START_RX_ARG_NEXT_STATE1_RXTIMEOUT_STATE_ENUM_NOCHANGE,
-                  SI446X_CMD_START_RX_ARG_NEXT_STATE2_RXVALID_STATE_ENUM_RX,
+                  SI446X_CMD_START_RX_ARG_NEXT_STATE2_RXVALID_STATE_ENUM_READY,
                   SI446X_CMD_START_RX_ARG_NEXT_STATE3_RXINVALID_STATE_ENUM_RX );
 }
 
@@ -333,11 +334,14 @@ void RadioTaskHandleIRQ(void)
     if(phInt & PACKET_SENT)
     {
         // TODO: Packet was transmitted, move to the "wait for ACK" state
+        Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
     }
     
     // PACKET_RX
     if(phInt & PACKET_RX)
     {
+        DEBUG("Radio RX\r\n");
+        
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
         radio_message_t* message = (radio_message_t*)rxBuff;

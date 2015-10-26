@@ -51,7 +51,7 @@
           <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\Discover-More\</ListingPath>
+          <ListingPath>.\Listings\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -367,7 +367,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F40XX, USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\app\inc;.\support\CMSIS\Include;.\support\STM32F4x7_ETH_Driver\inc;.\support\STM32F4xx_StdPeriph_Driver\inc;.\support\STM32F4-Discovery;.\support\lwip_v1.3.2\port\STM32F4x7;.\support\lwip_v1.3.2\src\include;.\support\lwip_v1.3.2\src\include\ipv4;.\support\lwip_v1.3.2\src\include\lwip;.\support\lwip_v1.3.2\src\include\netif;.\support\lwip_v1.3.2\port\STM32F4x7\FreeRTOS;.\support\FreeRTOS\include;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\FreeRTOS\CMSIS_RTOS</IncludePath>
+              <IncludePath>.\app\inc;.\support\CMSIS\Include;.\support\STM32F4x7_ETH_Driver\inc;.\support\STM32F4xx_StdPeriph_Driver\inc;.\support\STM32F4-Discovery;.\support\lwip_v1.3.2\port\STM32F4x7;.\support\lwip_v1.3.2\src\include;.\support\lwip_v1.3.2\src\include\ipv4;.\support\lwip_v1.3.2\src\include\lwip;.\support\lwip_v1.3.2\src\include\netif;.\support\lwip_v1.3.2\port\STM32F4x7\FreeRTOS;.\support\FreeRTOS\include;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\FreeRTOS\CMSIS_RTOS;.\common\inc;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;..\..\project-dandelion\devkit\cross-platform\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -408,7 +408,7 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>User</GroupName>
+          <GroupName>app/src</GroupName>
           <Files>
             <File>
               <FileName>main.c</FileName>
@@ -431,11 +431,6 @@
               <FilePath>.\app\src\system_stm32f4xx.c</FilePath>
             </File>
             <File>
-              <FileName>udpecho.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\app\src\udpecho.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4x7_eth_bsp.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\src\stm32f4x7_eth_bsp.c</FilePath>
@@ -445,21 +440,36 @@
               <FileType>1</FileType>
               <FilePath>.\app\src\tcpecho.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>STM32F4-Discovery</GroupName>
-          <Files>
             <File>
-              <FileName>stm32f4_discovery.c</FileName>
+              <FileName>debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\support\STM32F4-Discovery\stm32f4_discovery.c</FilePath>
+              <FilePath>.\app\src\debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>console.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\console.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\radio.c</FilePath>
+            </File>
+            <File>
+              <FileName>sensor_conversions.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\src\sensor_conversions.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
           <GroupName>STM32F4xx_StdPeriph_Driver</GroupName>
           <Files>
+            <File>
+              <FileName>stm32f4x7_eth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4x7_ETH_Driver\src\stm32f4x7_eth.c</FilePath>
+            </File>
             <File>
               <FileName>misc.c</FileName>
               <FileType>1</FileType>
@@ -505,15 +515,15 @@
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>STM32F4x7_ETH_Driver</GroupName>
-          <Files>
             <File>
-              <FileName>stm32f4x7_eth.c</FileName>
+              <FileName>stm32f4xx_usart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\support\STM32F4x7_ETH_Driver\src\stm32f4x7_eth.c</FilePath>
+              <FilePath>.\support\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -564,16 +574,6 @@
               <FileName>cmsis_os.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\FreeRTOS\CMSIS_RTOS\cmsis_os.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>MDK-ARM</GroupName>
-          <Files>
-            <File>
-              <FileName>startup_stm32f407xx.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\app\startup_stm32f407xx.s</FilePath>
             </File>
           </Files>
         </Group>
@@ -744,6 +744,181 @@
               <FileName>etharp.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\lwip_v1.3.2\src\netif\etharp.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app/inc</GroupName>
+          <Files>
+            <File>
+              <FileName>radio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\radio.h</FilePath>
+            </File>
+            <File>
+              <FileName>netconf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\netconf.h</FilePath>
+            </File>
+            <File>
+              <FileName>serial_debug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\serial_debug.h</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4x7_eth_bsp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\stm32f4x7_eth_bsp.h</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4x7_eth_conf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\stm32f4x7_eth_conf.h</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_conf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\stm32f4xx_conf.h</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_it.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\stm32f4xx_it.h</FilePath>
+            </File>
+            <File>
+              <FileName>main.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\main.h</FilePath>
+            </File>
+            <File>
+              <FileName>lwipopts.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\lwipopts.h</FilePath>
+            </File>
+            <File>
+              <FileName>FreeRTOSConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\FreeRTOSConfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>debug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\debug.h</FilePath>
+            </File>
+            <File>
+              <FileName>console.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\console.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio_packets.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\inc\radio_packets.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>bsp/src</GroupName>
+          <Files>
+            <File>
+              <FileName>stm32f4_discovery.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4-Discovery\stm32f4_discovery.c</FilePath>
+            </File>
+            <File>
+              <FileName>startup_stm32f407xx.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\app\startup_stm32f407xx.s</FilePath>
+            </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\spi.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>bsp/inc</GroupName>
+          <Files>
+            <File>
+              <FileName>spi.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\spi.h</FilePath>
+            </File>
+            <File>
+              <FileName>uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\uart.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Si4436</GroupName>
+          <Files>
+            <File>
+              <FileName>radio_comm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_comm.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_comm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_comm.h</FilePath>
+            </File>
+            <File>
+              <FileName>radio_hal.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_hal.c</FilePath>
+            </File>
+            <File>
+              <FileName>radio_hal.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\radio_hal.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_api_lib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_api_lib.c</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_api_lib.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_api_lib.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_cmd.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_cmd.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_defs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_defs.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_nirq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_nirq.c</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_nirq.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_nirq.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_patch.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_patch.h</FilePath>
+            </File>
+            <File>
+              <FileName>si446x_prop.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\support\Si4463\drivers\radio\Si446x\si446x_prop.h</FilePath>
             </File>
           </Files>
         </Group>
