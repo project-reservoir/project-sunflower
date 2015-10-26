@@ -334,13 +334,12 @@ void RadioTaskHandleIRQ(void)
     if(phInt & PACKET_SENT)
     {
         // TODO: Packet was transmitted, move to the "wait for ACK" state
-        Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
     }
     
     // PACKET_RX
     if(phInt & PACKET_RX)
     {
-        DEBUG("Radio RX\r\n");
+        DEBUG("Radio RX Event\r\n");
         
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
@@ -356,6 +355,7 @@ void RadioTaskHandleIRQ(void)
                 break;
             
             case SENSOR_MSG:
+                DEBUG("Sensor Message\r\n");
                 sensorData = ParseSensorMessage(rxBuff);
                 // TODO: Store the response for later sending to Bouquet
                 break;
@@ -385,7 +385,7 @@ void RadioTaskHandleIRQ(void)
                 break;
 
             case PONG:
-				DEBUG("PONG");
+				INFO("PONG");
                 break;
         }
         
@@ -413,6 +413,8 @@ void RadioTaskHandleIRQ(void)
     //  INVALID_SYNC
     //  TX_FIFO_ALMOST_EMPTY
     //  RX_FIFO_ALMOST_FULL
+    
+    Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
 }
 
 // Accepts a 20 byte sensor message and converts it to a sensor data type
