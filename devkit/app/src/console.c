@@ -4,6 +4,8 @@
 #include "console.h"
 #include "app_header.h"
 #include "debug.h"
+#include "radio.h"
+#include "radio_packets.h"
 #include <string.h>
 
 osMessageQId        uartRxMsgQ;
@@ -22,6 +24,7 @@ char                testString[] = {"TEST TEST TEST"};
 static void         processString(char* str);
 static uint8_t      string_len(char* str);
 static void         processDebugCommand(char* str, uint8_t len);
+static void         processRadioCommand(char* str, uint8_t len);
 
 void ConsoleTaskHwInit(void)
 {
@@ -123,6 +126,9 @@ void processString(char* str)
         case 'd':
             processDebugCommand(str, len);
             break;
+        case 'x':
+            processRadioCommand(str, len);
+            break;
         case 'v':
             ConsolePrint("SUNFLOWER OS V ");
             ConsolePrint(APP_VERSION_STR);
@@ -135,6 +141,7 @@ void processString(char* str)
             break;
         default:
             ConsolePrint("h : print help\r\n");
+            ConsolePrint("x : radio commands\r\n");
             ConsolePrint("v : print version info\r\n");
             ConsolePrint("d : debug information\r\n");
             ConsolePrint("u : perform a fake firmware upgrade\r\n");
@@ -143,6 +150,31 @@ void processString(char* str)
     }
     
     ConsolePrint("> ");
+}
+
+void processRadioCommand(char* str, uint8_t len)
+{
+    radio_message_t* generic_msg;
+    
+    if(len >= 2)
+    {
+        switch(str[1])
+        {
+            case 'p':
+            generic_msg = pvPortMalloc(sizeof(radio_message_t));
+        
+            // TODO: check we didn't run out of RAM (we should catch this in the 
+            //       application Malloc failed handler, but just in case)
+        
+            generic_msg->ping.cmd = PING;
+        
+            SendToBroadcast((uint8_t*)generic_msg, sizeof(radio_message_t));
+            return;
+        }
+    }
+    
+    ConsolePrint("Radio Commands\r\n");
+    ConsolePrint("xp : send a radio ping packet\r\n");
 }
 
 void processDebugCommand(char* str, uint8_t len)

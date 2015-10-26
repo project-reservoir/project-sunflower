@@ -6,6 +6,7 @@
 #include "spi.h"
 #include "sensor_conversions.h"
 #include "radio_packets.h"
+#include "debug.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -340,6 +341,7 @@ void RadioTaskHandleIRQ(void)
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
         radio_message_t* message = (radio_message_t*)rxBuff;
+        radio_message_t* generic_msg;
         
         switch(message->generic.cmd)
         {
@@ -364,6 +366,22 @@ void RadioTaskHandleIRQ(void)
                 
             case FW_UPD_PAYLOAD:
                 // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                break;
+            
+            case PING:
+                DEBUG("PING\r\n");
+                generic_msg = pvPortMalloc(sizeof(radio_message_t));
+            
+                // TODO: check we didn't run out of RAM (we should catch this in the 
+                //       application Malloc failed handler, but just in case)
+            
+                generic_msg->ping.cmd = PONG;
+            
+                SendToBroadcast((uint8_t*)generic_msg, sizeof(radio_message_t));
+                break;
+
+            case PONG:
+				DEBUG("PONG");
                 break;
         }
         
