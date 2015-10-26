@@ -18,14 +18,14 @@
   * <h2><center>&copy; Portions COPYRIGHT 2011 STMicroelectronics</center></h2>
   ******************************************************************************
   */
-/**
+ /**
   ******************************************************************************
   * <h2><center>&copy; Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.</center></h2>
   * @file    stm32f4x7_eth_bsp.c
   * @author  CMP Team
   * @version V1.0.0
   * @date    28-December-2012
-  * @brief   STM32F4x7 Ethernet hardware configuration.      
+  * @brief   STM32F4x7 Ethernet hardware configuration.     
   *          Modified to support the STM32F4DISCOVERY, STM32F4DIS-BB and
   *          STM32F4DIS-LCD modules. 
   ******************************************************************************
@@ -42,6 +42,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4x7_eth.h"
 #include "stm32f4x7_eth_bsp.h"
+#include "FreeRTOS.h"
 #include "main.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -74,9 +75,7 @@ void ETH_BSP_Config(void)
   ETH_MACDMA_Config();
 
   if (EthInitStatus == 0) {
-    LCD_SetTextColor(LCD_COLOR_RED);
-    LCD_DisplayStringLine(Line5, (uint8_t*)"   Ethernet Init   ");
-    LCD_DisplayStringLine(Line6, (uint8_t*)"      failed      ");
+    // TODO: replace with some LED blink code
     while(1);
   }
 }
@@ -181,7 +180,7 @@ void ETH_GPIO_Config(void)
         ETH_RMII_REF_CLK-------> PA1
 
         ETH_RMII_CRS_DV -------> PA7
-				ETH_MII_RX_ER   -------> PB10
+		ETH_MII_RX_ER   -------> PB10
         ETH_RMII_RXD0   -------> PC4
         ETH_RMII_RXD1   -------> PC5
         ETH_RMII_TX_EN  -------> PB11
@@ -193,7 +192,7 @@ void ETH_GPIO_Config(void)
 
   /* Configure PA1,PA2 and PA7 */
   GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_7;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
   GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
   GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL ;
@@ -239,16 +238,13 @@ void ETH_GPIO_Config(void)
 void ETH_NVIC_Config(void)
 {
   NVIC_InitTypeDef   NVIC_InitStructure;
-
-  /* 2 bit for pre-emption priority, 2 bits for subpriority */
-  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); 
   
   /* Enable the Ethernet global Interrupt */
   NVIC_InitStructure.NVIC_IRQChannel = ETH_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);    
+  NVIC_Init(&NVIC_InitStructure);
 }
 
 /*********** Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.*****END OF FILE****/

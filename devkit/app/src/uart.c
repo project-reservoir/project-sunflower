@@ -7,6 +7,11 @@ char* uartTxBuff = NULL;
 uint8_t txSize = 0;
 uint8_t txPos = 0;
 
+void UART_Start(USART_TypeDef* uart)
+{
+    uart->CR1 |= USART_CR1_UE;
+}
+
 void UART_CharTX(USART_TypeDef* uart, char c)
 {
     uart->DR = c;
@@ -42,7 +47,7 @@ UART_Status UART_StartTX(USART_TypeDef* uart, char* buff, uint8_t size)
     UART_ContinueTX(uart);
     
     // Enable TX interrupts
-    uart->CR1 |= USART_CR1_TXEIE;
+    uart->CR1 |= USART_CR1_TCIE;
     
     return UART_OK;
 }
@@ -61,7 +66,12 @@ void UART_ContinueTX(USART_TypeDef* uart)
         return;
     }
     
-    uart->DR = uartTxBuff[txPos++];
+    uart->DR = (uartTxBuff[txPos++] & (uint8_t)0xFF);
+    
+    while((uart->SR & USART_SR_TC) != USART_SR_TC && ticks < UART_TIMEOUT_TICKS)
+    {
+        ticks++;
+    }
     
     // Finished transmitting
     if(txPos >= txSize)
@@ -71,6 +81,6 @@ void UART_ContinueTX(USART_TypeDef* uart)
         uartTxBuff = NULL;
         
         // Disable TX interrupts
-        uart->CR1 &= (~USART_CR1_TXEIE);
+        uart->CR1 &= (~USART_CR1_TCIE);
     }
 }

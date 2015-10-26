@@ -1,82 +1,74 @@
 #include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal_uart.h"
+#include "stm32f4xx.h"
 #include "uart.h"
 #include "console.h"
 #include "app_header.h"
 #include "debug.h"
+#include "radio.h"
+#include "radio_packets.h"
 #include <string.h>
 
-// Minimum message size includes the ':' starting character and the \n
-#define MIN_INTEL_MESSAGE_LEN   12
-#define MAX_INTEL_PAYLOAD       0x10
+osMessageQId        uartRxMsgQ;
 
-UART_HandleTypeDef UartHandle;
-osMessageQId uartRxMsgQ;
+uint8_t             rxBuff[CONSOLE_MAX_MSG_SIZE];
+uint8_t             txBuff[CONSOLE_MAX_MSG_SIZE];
+uint8_t             tmpHALRxBuff;
 
-char rxBuff[CONSOLE_MAX_MSG_SIZE];
-char txBuff[CONSOLE_MAX_MSG_SIZE];
+uint8_t             rxBuffPos = 0;
+uint8_t             txBuffPos = 0;
 
-uint8_t rxBuffPos = 0;
-uint8_t txBuffPos = 0;
+uint8_t             console_task_started = 0;
 
-uint8_t console_task_started = 0;
+char                testString[] = {"TEST TEST TEST"};
 
-uint16_t extended_address = 0;
-uint16_t current_intel_address = 0;
-uint8_t intel_hex_payload[MAX_INTEL_PAYLOAD];
-
-static void processString(char* str);
-static uint8_t string_len(char* str);
-static void processDebugCommand(char* str, uint8_t len);
+static void         processString(char* str);
+static uint8_t      string_len(char* str);
+static void         processDebugCommand(char* str, uint8_t len);
+static void         processRadioCommand(char* str, uint8_t len);
 
 void ConsoleTaskHwInit(void)
 {
-    GPIO_InitTypeDef  GPIO_InitStruct;
+    GPIO_InitTypeDef   GPIO_InitStructure;
+    NVIC_InitTypeDef   NVIC_InitStructure;
     
-    /*##-1- Enable peripherals and GPIO Clocks #################################*/
-    /* Enable GPIO TX/RX clock */
-    USARTx_TX_GPIO_CLK_ENABLE();
-    USARTx_RX_GPIO_CLK_ENABLE();
-    /* Enable USART2 clock */
-    USARTx_CLK_ENABLE(); 
+    USARTn_TX_GPIO_CLK_ENABLE();
+    USARTn_RX_GPIO_CLK_ENABLE();
+    USARTn_CLK_ENABLE(); 
+    
+    GPIO_InitStructure.GPIO_Pin   = USARTn_TX_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_Init(USARTn_TX_GPIO_PORT, &GPIO_InitStructure);
+    
+    GPIO_InitStructure.GPIO_Pin   = USARTn_RX_PIN;
+    GPIO_Init(USARTn_RX_GPIO_PORT, &GPIO_InitStructure);
+    
+    GPIO_PinAFConfig(USARTn_TX_GPIO_PORT, USARTn_TX_PIN_SOURCE, USARTn_TX_AF);
+    GPIO_PinAFConfig(USARTn_RX_GPIO_PORT, USARTn_RX_PIN_SOURCE, USARTn_RX_AF);    
 
-    /*##-2- Configure peripheral GPIO ##########################################*/  
-    /* UART TX GPIO pin configuration  */
-    GPIO_InitStruct.Pin       = USARTx_TX_PIN;
-    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull      = GPIO_NOPULL;
-    GPIO_InitStruct.Speed     = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate = USARTx_TX_AF;
-
-    HAL_GPIO_Init(USARTx_TX_GPIO_PORT, &GPIO_InitStruct);
-
-    /* UART RX GPIO pin configuration  */
-    GPIO_InitStruct.Pin = USARTx_RX_PIN;
-    GPIO_InitStruct.Alternate = USARTx_RX_AF;
-
-    HAL_GPIO_Init(USARTx_RX_GPIO_PORT, &GPIO_InitStruct);
-
-    /*##-3- Configure the NVIC for UART ########################################*/
-    /* NVIC for USART1 */
-    HAL_NVIC_SetPriority(USARTx_IRQn, 0, 1);
-    HAL_NVIC_EnableIRQ(USARTx_IRQn);
+    NVIC_InitStructure.NVIC_IRQChannel = USARTn_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_LOWEST_INTERRUPT_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 }
 
 void ConsoleTaskOSInit(void)
 {
+    USART_InitTypeDef config;
     osMessageQDef(UARTRxMsgQueue, CONSOLE_MSG_Q_SIZE, char*);
     uartRxMsgQ = osMessageCreate(osMessageQ(UARTRxMsgQueue), NULL);
     
-    UartHandle.Instance        = USARTx;
-    UartHandle.Init.BaudRate   = 9600;
-    UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
-    UartHandle.Init.StopBits   = UART_STOPBITS_1;
-    UartHandle.Init.Parity     = UART_PARITY_NONE;
-    UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
-    UartHandle.Init.Mode       = UART_MODE_TX_RX;
-    
-    assert_param(HAL_UART_Init(&UartHandle) == HAL_OK);
+    config.USART_BaudRate               = 115200;
+    config.USART_HardwareFlowControl    = USART_HardwareFlowControl_None;
+    config.USART_Mode                   = USART_Mode_Rx | USART_Mode_Tx;
+    config.USART_Parity                 = USART_Parity_No;
+    config.USART_StopBits               = USART_StopBits_1;
+    config.USART_WordLength             = USART_WordLength_8b;
+
+    USART_Init(USARTn, &config);
 }
 
 void ConsoleTask(void)
@@ -84,9 +76,11 @@ void ConsoleTask(void)
     osEvent msgQueueEvent;
     char* rxChars = NULL;
     
+    UART_Start(USARTn);
+    
     while(1)
     {
-        UART_StartRX(USARTx);
+        UART_StartRX(USARTn);
         
         console_task_started = 1;
         
@@ -109,15 +103,12 @@ void processString(char* str)
     uint8_t len = string_len(str);
     uint8_t i;
     
+    (void)i;
+    
     ConsolePrint("\r\n");
     
     switch(str[0])
     {
-        #ifdef CONSOLE_FW_UPDATE
-        case ':':
-            ParseIntelHex(str, len);
-            break;
-        #endif
         case 'r':
             if(len >= 2)
             {
@@ -135,8 +126,11 @@ void processString(char* str)
         case 'd':
             processDebugCommand(str, len);
             break;
+        case 'x':
+            processRadioCommand(str, len);
+            break;
         case 'v':
-            ConsolePrint("DANDELION OS V ");
+            ConsolePrint("SUNFLOWER OS V ");
             ConsolePrint(APP_VERSION_STR);
             ConsolePrint("\r\n");
             ConsolePrint("BUILD DATE: ");
@@ -147,6 +141,7 @@ void processString(char* str)
             break;
         default:
             ConsolePrint("h : print help\r\n");
+            ConsolePrint("x : radio commands\r\n");
             ConsolePrint("v : print version info\r\n");
             ConsolePrint("d : debug information\r\n");
             ConsolePrint("u : perform a fake firmware upgrade\r\n");
@@ -155,6 +150,31 @@ void processString(char* str)
     }
     
     ConsolePrint("> ");
+}
+
+void processRadioCommand(char* str, uint8_t len)
+{
+    generic_message_t* generic_msg;
+    
+    if(len >= 2)
+    {
+        switch(str[1])
+        {
+            case 'p':
+            generic_msg = pvPortMalloc(sizeof(generic_message_t));
+        
+            // TODO: check we didn't run out of RAM (we should catch this in the 
+            //       application Malloc failed handler, but just in case)
+        
+            generic_msg->cmd = PING;
+        
+            SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+            return;
+        }
+    }
+    
+    ConsolePrint("Radio Commands\r\n");
+    ConsolePrint("xp : send a radio ping packet\r\n");
 }
 
 void processDebugCommand(char* str, uint8_t len)
@@ -205,18 +225,19 @@ uint8_t string_len(char* str)
 void ConsolePrint(char* text)
 {
     uint8_t i = string_len(text);
+        
     while(!console_task_started)
     {
         osDelay(10);
     }
     
     // While the UART is not ready for TX, spin
-    while(UART_ReadyTX(UartHandle.Instance) != UART_OK)
+    while(UART_ReadyTX(USARTn) != UART_OK)
     {
         osDelay(10);
     }
     
-    UART_StartTX(UartHandle.Instance, text, i);
+    UART_StartTX(USARTn, text, i);
 }
 
 void ConsoleGetChar(char c)
@@ -243,5 +264,5 @@ void ConsoleGetChar(char c)
         osMessagePut(uartRxMsgQ, (uint32_t)rxBuff, osWaitForever);
     }
     
-    UART_CharTX(UartHandle.Instance, c);
+    UART_CharTX(USARTn, c);
 }

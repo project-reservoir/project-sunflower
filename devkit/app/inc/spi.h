@@ -1,7 +1,8 @@
 #ifndef _SPI_H
 #define _SPI_H
 
-#include "stm32f4xx_hal.h"
+#include "stm32f4xx.h"
+#include "FreeRTOS.h"
 
 #define SPI_TIMEOUT_TICKS 5000000
 #define SPI_BUSY_WAIT_EXTRA 80
@@ -11,6 +12,7 @@ typedef enum SPI_Status_t {
     SPI_TIMEOUT
 } SPI_Status;
 
+void SPI_Initialize(void);
 void SPI_WaitForNotBusy(void);
 void SPI_WaitForTX(void);
 void SPI_WaitForRX(void);

@@ -1,7 +1,8 @@
 #ifndef _UART_H
 #define _UART_H
 
-#include "stm32f4xx_hal.h"
+#include "stm32f4xx.h"
+#include "FreeRTOS.h"
 
 #define UART_TIMEOUT_TICKS 500000
 
@@ -12,6 +13,7 @@ typedef enum {
     UART_NOT_READY
 } UART_Status;
 
+void        UART_Start(USART_TypeDef* uart);
 UART_Status UART_StartRX(USART_TypeDef* uart);
 UART_Status UART_StartTX(USART_TypeDef* uart, char* buff, uint8_t size);
 void        UART_ContinueTX(USART_TypeDef* uart);

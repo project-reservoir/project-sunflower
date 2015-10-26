@@ -1,5 +1,6 @@
 #include "console.h"
 #include "debug.h"
+#include "FreeRTOS.h"
 
 static uint8_t debug_enabled = 0;
 static uint8_t info_enabled = 1;

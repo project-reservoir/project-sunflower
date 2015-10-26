@@ -4,26 +4,25 @@
 #include "si446x_api_lib.h"
 #include "si446x_cmd.h"
 #include "spi.h"
-#include "hwctrl.h"
-#include "led_task.h"
 #include "sensor_conversions.h"
+#include "radio_packets.h"
+#include "debug.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
 osMessageQId radioRxMsgQ;
 osMessageQId radioWakeupMsgQ;
 
-SPI_HandleTypeDef SpiHandle;
-
-uint8_t Radio_Configuration_Data_Array[] = RADIO_CONFIGURATION_DATA_ARRAY;
-tRadioConfiguration RadioConfiguration = RADIO_CONFIGURATION_DATA;
-tRadioConfiguration* pRadioConfiguration = &RadioConfiguration;
+uint8_t                 Radio_Configuration_Data_Array[]    = RADIO_CONFIGURATION_DATA_ARRAY;
+tRadioConfiguration     RadioConfiguration                  = RADIO_CONFIGURATION_DATA;
+tRadioConfiguration*    pRadioConfiguration                 = &RadioConfiguration;
 
 uint8_t customRadioPacket[RADIO_MAX_PACKET_LENGTH];
 
-// Local variables 
-static uint8_t txBuff[RADIO_MAX_PACKET_LENGTH];
-static uint8_t rxBuff[RADIO_MAX_PACKET_LENGTH];
+// Local variables
+static uint8_t          rxBuff[RADIO_MAX_PACKET_LENGTH];
+
+static NetworkMember_t  networkTable[MAX_NETWORK_MEMBERS];
 
 static RadioTaskState radioTaskState = CONNECTED;
 static NetworkInfo    network;
@@ -39,6 +38,8 @@ static SensorData ParseSensorMessage(uint8_t* radioMessage);
 // Global function implementations
 void RadioTaskOSInit(void)
 {
+    SPI_InitTypeDef spiConfig;
+    
     osMessageQDef(RadioTxMsgQueue, RADIO_MSG_QUEUE_SIZE, RadioMessage*);
     osMessageQDef(RadioRxMsgQueue, RADIO_MSG_QUEUE_SIZE, RadioMessage*);
     osMessageQDef(RadioWakeupMsgQueue, RADIO_MSG_QUEUE_SIZE, RadioTaskWakeupReason);
@@ -51,130 +52,85 @@ void RadioTaskOSInit(void)
     assert_param(radioRxMsgQ != NULL);
     assert_param(radioWakeupMsgQ != NULL);
     
-    SpiHandle.Instance               = SPIx;
-    SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-    SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
-    SpiHandle.Init.CLKPhase          = SPI_PHASE_1EDGE;
-    SpiHandle.Init.CLKPolarity       = SPI_POLARITY_LOW;
-    SpiHandle.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
-    SpiHandle.Init.CRCPolynomial     = 7;
-    SpiHandle.Init.DataSize          = SPI_DATASIZE_8BIT;
-    SpiHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-    SpiHandle.Init.NSS               = SPI_NSS_SOFT;
-    SpiHandle.Init.TIMode            = SPI_TIMODE_DISABLED;
-    SpiHandle.Init.Mode              = SPI_MODE_MASTER;
+    spiConfig.SPI_BaudRatePrescaler  = SPI_BaudRatePrescaler_256;
+    spiConfig.SPI_Direction          = SPI_Direction_2Lines_FullDuplex;    
+    spiConfig.SPI_CPHA               = SPI_CPHA_1Edge;
+    spiConfig.SPI_CPOL               = SPI_CPOL_Low;
+    spiConfig.SPI_DataSize           = SPI_DataSize_8b;
+    spiConfig.SPI_FirstBit           = SPI_FirstBit_MSB;
+    spiConfig.SPI_NSS                = SPI_NSS_Soft;
+    spiConfig.SPI_Mode               = SPI_Mode_Master;
     
-    assert_param(HAL_SPI_Init(&SpiHandle) == HAL_OK);
+    SPI_Init(SPIn, &spiConfig);
     
-    SPIx->CR1 |= SPI_CR1_SPE;
+    SPIn->CR1 |= SPI_CR1_SPE;
 }
 
 void RadioTaskHwInit(void)
 {   
-    GPIO_InitTypeDef  GPIO_InitStruct;
+    GPIO_InitTypeDef    GPIO_InitStructure;
+    EXTI_InitTypeDef    EXTI_InitStructure;
     
-    // Enable LED
+    SPIn_SCK_GPIO_CLK_ENABLE();
+    SPIn_MISO_GPIO_CLK_ENABLE();
+    SPIn_MOSI_GPIO_CLK_ENABLE();
+    SPIn_CLK_ENABLE();
     
-    LED3_GPIO_CLK_ENABLE();
+    GPIO_InitStructure.GPIO_Pin   = SPIn_SCK_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_Init(SPIn_SCK_GPIO_PORT, &GPIO_InitStructure);
     
-	GPIO_InitStruct.Pin = LED3_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
-
-	HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
-
-    /*##-1- Enable peripherals and GPIO Clocks #################################*/
-    /* Enable GPIO TX/RX clock */
-    SPIx_SCK_GPIO_CLK_ENABLE();
-    SPIx_MISO_GPIO_CLK_ENABLE();
-    SPIx_MOSI_GPIO_CLK_ENABLE();
-    /* Enable SPI clock */
-    SPIx_CLK_ENABLE();
-
-    /*##-2- Configure peripheral GPIO ##########################################*/  
-    /* SPI SCK GPIO pin configuration  */
-    GPIO_InitStruct.Pin       = SPIx_SCK_PIN;
-    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull      = GPIO_NOPULL;
-    GPIO_InitStruct.Speed     = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate = SPIx_SCK_AF;
-
-    HAL_GPIO_Init(SPIx_SCK_GPIO_PORT, &GPIO_InitStruct);
-
-    /* SPI MISO GPIO pin configuration  */
-    GPIO_InitStruct.Pin = SPIx_MISO_PIN;
-    GPIO_InitStruct.Alternate = SPIx_MISO_AF;
-
-    HAL_GPIO_Init(SPIx_MISO_GPIO_PORT, &GPIO_InitStruct);
-
-    /* SPI MOSI GPIO pin configuration  */
-    GPIO_InitStruct.Pin = SPIx_MOSI_PIN;
-    GPIO_InitStruct.Alternate = SPIx_MOSI_AF;
-
-    HAL_GPIO_Init(SPIx_MOSI_GPIO_PORT, &GPIO_InitStruct);
+    GPIO_InitStructure.GPIO_Pin   = SPIn_MISO_PIN;
+    GPIO_Init(SPIn_MISO_GPIO_PORT, &GPIO_InitStructure);
     
-    GPIO_InitStruct.Pin        = SPIx_NSS_PIN;
-    GPIO_InitStruct.Pull       = GPIO_PULLDOWN;
-    GPIO_InitStruct.Mode       = GPIO_MODE_OUTPUT_PP;   
-    GPIO_InitStruct.Speed      = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate  = 0x00;
-
-    HAL_GPIO_Init(SPIx_NSS_GPIO_PORT, &GPIO_InitStruct);
+    GPIO_InitStructure.GPIO_Pin   = SPIn_MOSI_PIN;
+    GPIO_Init(SPIn_MOSI_GPIO_PORT, &GPIO_InitStructure);
     
-    GPIO_InitStruct.Pin        = RADIO_SDL_PIN;
-    GPIO_InitStruct.Pull       = GPIO_PULLDOWN;
-    GPIO_InitStruct.Mode       = GPIO_MODE_OUTPUT_PP;   
-    GPIO_InitStruct.Speed      = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate  = 0x00;
+    GPIO_PinAFConfig(SPIn_SCK_GPIO_PORT, SPIn_SCK_PIN_SOURCE, SPIn_SCK_AF);
+    GPIO_PinAFConfig(SPIn_MISO_GPIO_PORT, SPIn_MISO_PIN_SOURCE, SPIn_MISO_AF);
+    GPIO_PinAFConfig(SPIn_MOSI_GPIO_PORT, SPIn_MOSI_PIN_SOURCE, SPIn_MOSI_AF);    
     
-    HAL_GPIO_Init(RADIO_SDL_GPIO_PORT, &GPIO_InitStruct);
+    GPIO_InitStructure.GPIO_Pin   = SPIn_NSS_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_Init(SPIn_NSS_GPIO_PORT, &GPIO_InitStructure);
     
-    // Configure Radio NIRQ
-    GPIO_InitStruct.Pin        = RADIO_NIRQ_PIN;
-    GPIO_InitStruct.Pull       = GPIO_NOPULL;
-    GPIO_InitStruct.Mode       = GPIO_MODE_IT_FALLING;
-    GPIO_InitStruct.Speed      = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate  = 0x00;
+    GPIO_InitStructure.GPIO_Pin   = RADIO_SDL_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
+    GPIO_Init(SPIn_NSS_GPIO_PORT, &GPIO_InitStructure);
     
-    HAL_GPIO_Init(RADIO_NIRQ_GPIO_PORT, &GPIO_InitStruct);
+    // NIRQ config
+    GPIO_InitStructure.GPIO_Pin   = RADIO_NIRQ_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_Init(RADIO_NIRQ_GPIO_PORT, &GPIO_InitStructure);
     
-    // Configure Radio GP1 pin
-    /*GPIO_InitStruct.Pin        = RADIO_GP1_PIN;
-    GPIO_InitStruct.Pull       = GPIO_NOPULL;
-    GPIO_InitStruct.Mode       = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Speed      = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate  = 0x00;
+    // Configure NIRQ EXTI line
+    SYSCFG_EXTILineConfig(RADIO_NIRQ_EXTI_PORT_SOURCE, RADIO_NIRQ_EXTI_PIN_SOURCE);
+    EXTI_InitStructure.EXTI_Line = RADIO_NIRQ_EXTI_LINE;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;  
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
     
-    HAL_GPIO_Init(RADIO_GP1_GPIO_PORT, &GPIO_InitStruct);*/
-    
-    // Configure User pushbutton for radio testing
-    
-    KEY_BUTTON_GPIO_CLK_ENABLE();
-    
-    GPIO_InitStruct.Pin        = KEY_BUTTON_PIN;
-    GPIO_InitStruct.Pull       = GPIO_NOPULL;
-    GPIO_InitStruct.Mode       = GPIO_MODE_IT_FALLING;   
-    GPIO_InitStruct.Speed      = GPIO_SPEED_FAST;
-    GPIO_InitStruct.Alternate  = 0x00;
-    
-    HAL_GPIO_Init(KEY_BUTTON_GPIO_PORT, &GPIO_InitStruct);    
-
-    /*##-3- Configure the NVIC for SPI #########################################*/
-    /* NVIC for SPI */
-    //HAL_NVIC_SetPriority(SPIx_IRQn, 0, 1);
-    //HAL_NVIC_EnableIRQ(SPIx_IRQn);
-    
-    // Initially de-select SPI devices
-    HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT, SPIx_NSS_PIN, GPIO_PIN_SET);
+    // De-select all SPI devices
+    GPIO_SetBits(SPIn_NSS_GPIO_PORT, SPIn_NSS_PIN);
 }
 
 void RadioTask(void)
 {
-    uint8_t radioConfigured = 0;
-    osEvent msgQueueEvent;
-    RadioMessage* msg;
+    uint8_t             radioConfigured = 0;
+    osEvent             msgQueueEvent;
+    RadioMessage*       msg;
+    NVIC_InitTypeDef    NVIC_InitStructure;
     
     // Delay to allow other tasks to start
     // Not delaying before starting the radio causes unpredictable behavior at boot!
@@ -193,19 +149,21 @@ void RadioTask(void)
             // TODO: consider entering an ultra-low power mode if radio config fails?
             //       We can't send sensor readings without the radio, so performing
             //       sensor polling is probably a waste of power
+            
+            // TODO: do something else if Radio config fails
+            assert_param(0);
         }
     }
     
     Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
     
     // Now that the radio has been configured, enable radio interrupts
-    HAL_NVIC_SetPriority(NIRQ_IRQn, 8, 1);
-    HAL_NVIC_EnableIRQ(NIRQ_IRQn);
-    
-    // Enable User pushbutton IRQ
-    //HAL_NVIC_SetPriority(KEY_BUTTON_EXTI_IRQn, 8, 2);
-    //HAL_NVIC_EnableIRQ(KEY_BUTTON_EXTI_IRQn);
-    
+    NVIC_InitStructure.NVIC_IRQChannel = NIRQ_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+        
     while(1)
     {               
         switch(radioTaskState)
@@ -235,6 +193,8 @@ void RadioTask(void)
                         if(msgQueueEvent.status == osEventMessage)
                         {
                             msg = (RadioMessage*)(msgQueueEvent.value.p);
+                            ((generic_message_t*)(msg->pData))->dst = msg->dest;
+                            ((generic_message_t*)(msg->pData))->src = RadioGetMACAddress();
                             
                             // Transmit the packet to the radio hardware
                             Radio_StartTx_Variable_Packet(pRadioConfiguration->Radio_ChannelNumber, msg->pData, msg->size);
@@ -261,12 +221,12 @@ void RadioTask(void)
 
 // The pointer passed into this function should have been allocated using 
 // the osAlloc() routine: it will be freed using the osFree routine
-void SendToBaseStation(uint8_t* data, uint8_t size)
+void SendToDevice(uint8_t* data, uint8_t size, uint32_t mac)
 {
     RadioMessage* message = pvPortMalloc(sizeof(RadioMessage));
     message->pData = data;
     message->size = size;
-    message->dest = network.baseStationMac; // TODO: what if we disconnect from the network and connect to a new base station when there are messages in the queue? This would result in packet loss
+    message->dest = mac;
     
     // TODO: Check that this actually succeeded, and don't block forever.
     //       Might need to return a status to indicate to calling function that we failed to send message
@@ -347,13 +307,16 @@ void Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRadioPacket, uin
 
 void Radio_StartRX(uint8_t channel)
 {
-  // Read ITs, clear pending ones
-  si446x_get_int_status(0u, 0u, 0u);
+    // Read ITs, clear pending ones
+    si446x_get_int_status(0u, 0u, 0u);
 
-  /* Start Receiving packet, channel 0, START immediately, Packet n bytes long */
-  si446x_start_rx(channel, 0u, RadioConfiguration.Radio_PacketLength,
+    // Reset the FIFO
+    si446x_fifo_info(SI446X_CMD_FIFO_INFO_ARG_FIFO_RX_BIT);
+
+    /* Start Receiving packet, channel 0, START immediately, Packet n bytes long */
+    si446x_start_rx(channel, 0u, RadioConfiguration.Radio_PacketLength,
                   SI446X_CMD_START_RX_ARG_NEXT_STATE1_RXTIMEOUT_STATE_ENUM_NOCHANGE,
-                  SI446X_CMD_START_RX_ARG_NEXT_STATE2_RXVALID_STATE_ENUM_RX,
+                  SI446X_CMD_START_RX_ARG_NEXT_STATE2_RXVALID_STATE_ENUM_READY,
                   SI446X_CMD_START_RX_ARG_NEXT_STATE3_RXINVALID_STATE_ENUM_RX );
 }
 
@@ -380,14 +343,72 @@ void RadioTaskHandleIRQ(void)
     // PACKET_RX
     if(phInt & PACKET_RX)
     {
+        DEBUG("Radio RX Event\r\n");
+        
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
-        sensorData = ParseSensorMessage(rxBuff);
+        generic_message_t* message = (generic_message_t*)rxBuff;
+        generic_message_t* generic_msg;
         
-        // TODO: Received a packet addressed to us. Put it in the input queue
-        HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_SET);
-        osDelay(200);
-        HAL_GPIO_WritePin(LED3_GPIO_PORT, LED3_PIN, GPIO_PIN_RESET);
+        if(message->dst == RadioGetMACAddress() || message->dst == 0xFFFFFFFF)
+        {
+            switch(message->cmd)
+            {
+                // The base station has requested info from us: reply with it
+                case DEVICE_INFO:
+                    // TODO: Store the response for later sending to Bouquet
+                    break;
+                
+                case SENSOR_MSG:
+                    DEBUG("Sensor Message\r\n");
+                    // TODO: Store the response for later sending to Bouquet
+                    break;
+                
+                case FW_UPD_START:
+                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                    break;
+                
+                case FW_UPD_END:
+                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                    break;
+                    
+                case FW_UPD_PAYLOAD:
+                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
+                    break;
+                
+                case PING:
+                    DEBUG("PING\r\n");
+                    generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                
+                    // TODO: check we didn't run out of RAM (we should catch this in the 
+                    //       application Malloc failed handler, but just in case)
+                
+                    generic_msg->cmd = PONG;
+                    generic_msg->src = RadioGetMACAddress();
+                    generic_msg->dst = message->src;
+                
+                    SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                    break;
+
+                case PONG:
+                    INFO("PONG\r\n");
+                    break;
+                
+                case ANNOUNCE:
+                    DEBUG("ANNOUNCE RECEIVED\r\n");
+                    generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                
+                    // TODO: check we didn't run out of RAM (we should catch this in the 
+                    //       application Malloc failed handler, but just in case)
+                
+                    generic_msg->cmd = JOIN;
+                    generic_msg->src = RadioGetMACAddress();
+                    generic_msg->dst = message->src;
+                
+                    SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                    break;
+            }
+        }
     }
     
     // CRC_ERROR
@@ -409,66 +430,12 @@ void RadioTaskHandleIRQ(void)
     //  INVALID_SYNC
     //  TX_FIFO_ALMOST_EMPTY
     //  RX_FIFO_ALMOST_FULL
+    
+    Radio_StartRX(pRadioConfiguration->Radio_ChannelNumber);
 }
 
-// Accepts a 20 byte sensor message and converts it to a sensor data type
-SensorData ParseSensorMessage(uint8_t* radioMessage)
+uint32_t RadioGetMACAddress(void)
 {
-    uint16_t tmp = 0;
-    SensorData retVal;
-    
-    retVal.tempChip = 0.0;
-    retVal.tempRadio = 0.0;
-    
-    //moist 0
-    tmp = (radioMessage[0] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[1]) & 0x00FF;  // LSB
-    retVal.moist0 = SMS_To_Float(tmp);
-    
-    // moist 1
-    tmp = (radioMessage[2] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[3]) & 0x00FF;  // LSB
-    retVal.moist1 = SMS_To_Float(tmp);
-    
-    // moist 2
-    tmp = (radioMessage[4] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[5]) & 0x00FF;  // LSB
-    retVal.moist2 = SMS_To_Float(tmp);
-    
-    // humid    
-    tmp = (radioMessage[6] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[7]) & 0x00FF;  // LSB
-    retVal.humid = HTU21D_Humid_To_Float(tmp);
-
-    // temp 0    
-    tmp = (radioMessage[8] << 8) & 0xFF00;        // MSB
-    tmp |= ((uint16_t)radioMessage[9]) & 0x00FF;  // LSB
-    retVal.temp0 = TMP102_To_Float(tmp);
-
-    // temp 1
-    tmp = (radioMessage[10] << 8) & 0xFF00;       // MSB
-    tmp |= ((uint16_t)radioMessage[11]) & 0x00FF; // LSB
-    retVal.temp1 = TMP102_To_Float(tmp);
-
-    // temp 2
-    tmp = (radioMessage[12] << 8) & 0xFF00;       // MSB
-    tmp |= ((uint16_t)radioMessage[13]) & 0x00FF; // LSB
-    retVal.temp2 = TMP102_To_Float(tmp);
-
-    // air temp
-    tmp = (radioMessage[14] << 8) & 0xFF00;       // MSB
-    tmp |= ((uint16_t)radioMessage[15]) & 0x00FF; // LSB
-    retVal.tempAir = HTU21D_Temp_To_Float(tmp);
-    
-    /*
-    
-    // battery level
-    radioMessage[16] = 0x00;
-    radioMessage[17] = 0x00;
-    
-    // solar level
-    radioMessage[18] = 0x00;
-    radioMessage[19] = 0x00;*/
-    
-    return retVal;
+    return *((uint32_t*)0x1FFF7A10);
 }
+

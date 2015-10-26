@@ -1,61 +1,187 @@
-#include "hwctrl.h"
-#include "stm32f4xx_hal.h"
-#include "led_task.h"
-#include "radio.h"
-#include "cmsis_os.h"
+/**
+  ******************************************************************************
+  * @file    main.c
+  * @author  MCD Application Team
+  * @version V1.0.0
+  * @date    31-October-2011
+  * @brief   Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
+  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
+  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
+  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  *
+  * <h2><center>&copy; Portions COPYRIGHT 2011 STMicroelectronics</center></h2>
+  ******************************************************************************
+  */
+ /**
+  ******************************************************************************
+  * <h2><center>&copy; Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.</center></h2>
+  * @file    main.c
+  * @author  CMP Team
+  * @version V1.0.0
+  * @date    28-December-2012
+  * @brief   Main program body     
+  *          Modified to support the STM32F4DISCOVERY, STM32F4DIS-BB and
+  *          STM32F4DIS-LCD modules. 
+  ******************************************************************************
+  * @attention
+  *
+  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
+  * TIME. AS A RESULT, Embest SHALL NOT BE HELD LIABLE FOR ANY DIRECT, INDIRECT
+  * OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING FROM THE CONTENT
+  * OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE CODING INFORMATION
+  * CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  ******************************************************************************
+  */ 
 
-unsigned portBASE_TYPE makeFreeRtosPriority (osPriority priority)
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4x7_eth.h"
+#include "netconf.h"
+#include "main.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "tcpip.h"
+#include "cmsis_os.h"
+#include "console.h"
+#include "radio.h"
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+
+/*--------------- LCD Messages ---------------*/
+#define MESSAGE1   "     STM32F4x7      "
+#define MESSAGE2   "  STM32F-4 Series   "
+#define MESSAGE3   " UDP/TCP EchoServer "
+#define MESSAGE4   "                    "
+
+/*--------------- Tasks Priority -------------*/
+#define DHCP_TASK_PRIO      osPriorityNormal      
+#define LED_TASK_PRIO       osPriorityLow
+#define CONSOLE_TASK_PRIO   osPriorityNormal
+#define RADIO_TASK_PRIO     osPriorityHigh
+
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+extern struct netif xnetif;
+__IO uint32_t test;
+ 
+/* Private function prototypes -----------------------------------------------*/
+void LCD_LED_Init(void);
+extern void tcpecho_init(void);
+extern void udpecho_init(void);
+
+/* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Toggle Led4 task
+  * @param  pvParameters not used
+  * @retval None
+  */
+void ToggleLed4(void * pvParameters)
 {
-  unsigned portBASE_TYPE fpriority = tskIDLE_PRIORITY;
-  
-  if (priority != osPriorityError) {
-    fpriority += (priority - osPriorityIdle);
-  }
-  
-  return fpriority;
+    while (1)
+    {   
+        test = xnetif.ip_addr.addr;
+        /*check if IP address assigned*/
+        if (test != 0) 
+        {
+            while(1)
+            {
+                /* toggle LED4 each 250ms */
+                STM_EVAL_LEDToggle(LED4);
+                vTaskDelay(250);
+            }
+        }
+    }
+}
+
+/**
+  * @brief  Main program.
+  * @param  None
+  * @retval None
+  */
+int main(void)
+{
+    // Needed for FreeRTOS (only use pre-emption priority values)
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
+
+    /*!< At this stage the microcontroller clock setting is already configured to 
+       144 MHz, this is done through SystemInit() function which is called from
+       startup file (startup_stm32f4xx.s) before to branch to application main.
+       To reconfigure the default setting of SystemInit() function, refer to
+       system_stm32f4xx.c file
+     */
+    /*Initialize LCD and Leds */ 
+    LCD_LED_Init();
+
+    /* configure ethernet (GPIOs, clocks, MAC, DMA) */ 
+    ETH_BSP_Config();
+    
+    ConsoleTaskHwInit();
+    ConsoleTaskOSInit();
+    
+    RadioTaskHwInit();
+    RadioTaskOSInit();
+    
+    /* Initilaize the LwIP stack */
+    LwIP_Init();
+
+    /* Initialize tcp echo server */
+    tcpecho_init();
+
+#ifdef USE_DHCP
+    /* Start DHCPClient */
+    osThreadDef(DHCP_Thread, LwIP_DHCP_task, DHCP_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
+    osThreadCreate(osThread(DHCP_Thread), NULL);
+#endif
+
+    /* Start toogleLed4 task : Toggle LED4  every 250ms */
+    osThreadDef(LED_Thread, (os_pthread)ToggleLed4, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(LED_Thread), NULL);
+    
+    osThreadDef(Console_Thead, (os_pthread)ConsoleTask, CONSOLE_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(Console_Thead), NULL);
+    
+    osThreadDef(Radio_Thead, (os_pthread)RadioTask, RADIO_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
+    osThreadCreate(osThread(Radio_Thead), NULL);
+
+    /* Start scheduler */
+    vTaskStartScheduler();
+
+    /* We should never get here as control is now taken by the scheduler */
+    for( ;; );
+}
+
+/**
+  * @brief  Initializes the STM324xG-EVAL's LCD and LEDs resources.
+  * @param  None
+  * @retval None
+  */
+void LCD_LED_Init(void)
+{
+    STM_EVAL_LEDInit(LED4); 
 }
 
 void vApplicationStackOverflowHook(void)
 {
-    HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
+    //TODO: fix 
+    //HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
+    //__BKPT(0);
+    while(1);
 }
 
-int main(void)
-{	
-	xTaskHandle ledTaskHandle;
-    xTaskHandle radioTaskHandle;
-    
-    // Configure the system clock
-    SystemClock_Config();
-    
-    // Setup external ports on the MCU
-    HwCtrl_Init();
-    
-    // Initialize the ST Micro Board Support Library
-    HAL_Init();
-    
-    RadioTaskOSInit();
-	
-    xTaskCreate(RadioTask,
-                "RadioTask",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &radioTaskHandle);
-    
-    // Create an LED blink tasks	
-    xTaskCreate(LedBlinkTask,
-                "LEDTask",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                makeFreeRtosPriority(osPriorityNormal),
-                &ledTaskHandle);
-    
-    // Start scheduler
-    vTaskStartScheduler();
-
-    // We should never get here as control is now taken by the scheduler
-    for(;;);
+void vApplicationMallocFailedHook(void)
+{
+    //TODO: fix 
+    //HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
+    //__BKPT(0);
+    while(1);
 }
 
 #ifdef  USE_FULL_ASSERT
@@ -69,11 +195,14 @@ int main(void)
   */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* User can add his own implementation to report the file name and line number,
+    /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
-  /* Infinite loop */
-  while (1)
-  {}
+    /* Infinite loop */
+    while (1)
+    {}
 }
 #endif
+
+
+/*********** Portions COPYRIGHT 2012 Embest Tech. Co., Ltd.*****END OF FILE****/
