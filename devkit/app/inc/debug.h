@@ -31,14 +31,19 @@
 #define STATIC_ASSERT_MSG(COND,MSG) \
     typedef char static_assertion_##MSG[(!!(COND))*2-1]
 
-void ERR(char* a);
-void WARN(char* a);
-void INFO(char* a);
-void DEBUG(char* a);
+void ERR(const char *fmt, ...);
+void WARN(const char *fmt, ...);
+void INFO(const char *fmt, ...);
+void DEBUG(const char *fmt, ...);
 
 void ToggleInfo(void);
 void ToggleWarn(void);
 void ToggleError(void);
 void ToggleDebug(void);
+    
+uint8_t DebugEnabled(void);
+uint8_t WarnEnabled(void);
+uint8_t ErrorEnabled(void);
+uint8_t InfoEnabled(void);
 
 #endif //__DEBUG_H

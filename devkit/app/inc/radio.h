@@ -100,6 +100,7 @@ void RadioTaskOSInit(void);
 void RadioTask(void);
 void RadioTaskHandleIRQ(void);
 uint32_t RadioGetMACAddress(void);
+void RadioPrintConnectedDevices(void);
 
 // Public Radio API
 void SendToDevice(uint8_t* data, uint8_t size, uint32_t mac);

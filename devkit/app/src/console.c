@@ -6,6 +6,9 @@
 #include "debug.h"
 #include "radio.h"
 #include "radio_packets.h"
+#include "xprintf.h"
+#include "ftp.h"
+#include "time_sync.h"
 #include <string.h>
 
 osMessageQId        uartRxMsgQ;
@@ -25,6 +28,14 @@ static void         processString(char* str);
 static uint8_t      string_len(char* str);
 static void         processDebugCommand(char* str, uint8_t len);
 static void         processRadioCommand(char* str, uint8_t len);
+static void         consoleTxChar(unsigned char c);
+static void         processFTPCommand(char* str, uint8_t len);
+
+
+void consoleTxChar(unsigned char c)
+{
+    UART_CharTX(USARTn, c);
+}
 
 void ConsoleTaskHwInit(void)
 {
@@ -69,6 +80,8 @@ void ConsoleTaskOSInit(void)
     config.USART_WordLength             = USART_WordLength_8b;
 
     USART_Init(USARTn, &config);
+    
+    xdev_out(consoleTxChar);
 }
 
 void ConsoleTask(void)
@@ -105,10 +118,13 @@ void processString(char* str)
     
     (void)i;
     
-    ConsolePrint("\r\n");
+    xprintf("\n");
     
     switch(str[0])
     {
+        case 'f':
+            processFTPCommand(str, len);
+            break;
         case 'r':
             if(len >= 2)
             {
@@ -119,37 +135,109 @@ void processString(char* str)
             }
             else
             {
-                ConsolePrint("Reset commands\r\n");
-                ConsolePrint("rr: reset the microprocessor completely\r\n");
+                xprintf("Reset commands\n");
+                xprintf("rr: reset the microprocessor completely\n");
             }
             break;
         case 'd':
             processDebugCommand(str, len);
             break;
+        case 't':
+            if(len >= 2)
+            {
+                if(str[1] == 's')
+                {
+                    xprintf("Syncing Time...\n");
+                    TimeSync();
+                }
+                else if(str[1] == 'p')
+                {
+                    xprintf("Time print not supported\n");
+                }
+            }
+            else
+            {
+                xprintf("Time commands\n");
+                xprintf("ts: sync the RTC with the remote server\n");
+                xprintf("tp: print the current RTC time\n");
+            }
+            break;
         case 'x':
             processRadioCommand(str, len);
             break;
         case 'v':
-            ConsolePrint("SUNFLOWER OS V ");
-            ConsolePrint(APP_VERSION_STR);
-            ConsolePrint("\r\n");
-            ConsolePrint("BUILD DATE: ");
-            ConsolePrint(__DATE__);
-            ConsolePrint("  :  ");
-            ConsolePrint(__TIME__);
-            ConsolePrint("\r\n\r\n");
+            xprintf("SUNFLOWER OS V 0x%08x\n", APP_VERSION);
+            xprintf("BUILD DATE: %s @ %s\n\n", __DATE__, __TIME__);
             break;
         default:
-            ConsolePrint("h : print help\r\n");
-            ConsolePrint("x : radio commands\r\n");
-            ConsolePrint("v : print version info\r\n");
-            ConsolePrint("d : debug information\r\n");
-            ConsolePrint("u : perform a fake firmware upgrade\r\n");
-            ConsolePrint("r : reset commands\r\n");
+            xprintf("h : print help\n");
+            xprintf("f : FTP commands\n");
+            xprintf("x : radio commands\n");
+            xprintf("t : time commands\n");
+            xprintf("v : print version info\n");
+            xprintf("d : debug information\n");
+            xprintf("u : perform a fake firmware upgrade\n");
+            xprintf("r : reset commands\n");
             break;
     }
     
-    ConsolePrint("> ");
+    xprintf("> ");
+}
+
+void processFTPCommand(char* str, uint8_t len)
+{   
+    struct ip_addr  ipaddr;
+    long            port;
+    long            ip_temp_a;
+    long            ip_temp_b;
+    long            ip_temp_c;
+    long            ip_temp_d;
+    char*           first_num;
+    
+    if(len >= 2)
+    {
+        switch(str[1])
+        {
+            case 'i':
+                FTP_Init();
+                return;
+            
+            case 'd':
+                IP4_ADDR(&ipaddr, 169, 254, 129, 99);
+                FTP_Connect(&ipaddr, 21);
+                return;
+            
+            case 'l':
+                FTP_GetFwVersions(NULL, NULL, 0);
+                return;
+            
+            case 'c':
+                // Replace all '.' in the string with ' '
+                for(uint8_t i = 0; i < len; i++)
+                {
+                    if(str[i] == '.')
+                    {
+                        str[i] = ' ';
+                    }
+                }
+                
+                first_num = &str[3];
+                
+                xatoi(&first_num, &ip_temp_a);
+                xatoi(&first_num, &ip_temp_b);
+                xatoi(&first_num, &ip_temp_c);
+                xatoi(&first_num, &ip_temp_d);
+                xatoi(&first_num, &port);
+                IP4_ADDR(&ipaddr, ip_temp_a, ip_temp_b, ip_temp_c, ip_temp_d);
+                FTP_Connect(&ipaddr, port);
+                return;
+        }
+    }
+    
+    xprintf("FTP Commands\n");
+    xprintf("fi : initialize FTP\n");
+    xprintf("fd : connect to default FTP host\n");
+    xprintf("fc <ip> <port>: connect to an FTP server at 'ip' on 'port'\n");
 }
 
 void processRadioCommand(char* str, uint8_t len)
@@ -161,20 +249,30 @@ void processRadioCommand(char* str, uint8_t len)
         switch(str[1])
         {
             case 'p':
-            generic_msg = pvPortMalloc(sizeof(generic_message_t));
-        
-            // TODO: check we didn't run out of RAM (we should catch this in the 
-            //       application Malloc failed handler, but just in case)
-        
-            generic_msg->cmd = PING;
-        
-            SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
-            return;
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+            
+                // TODO: check we didn't run out of RAM (we should catch this in the 
+                //       application Malloc failed handler, but just in case)
+            
+                generic_msg->cmd = PING;
+            
+                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                return;
+            
+            case 'l':
+                RadioPrintConnectedDevices();
+                return;
+            
+            case 'i':
+                xprintf("Radio MAC: 0x%08x\n", RadioGetMACAddress());
+                return;
         }
     }
     
-    ConsolePrint("Radio Commands\r\n");
-    ConsolePrint("xp : send a radio ping packet\r\n");
+    xprintf("Radio Commands\n");
+    xprintf("xi : print radio info\n");
+    xprintf("xp : send a radio ping packet\n");
+    xprintf("xl : print a list of connected nodes\n");
 }
 
 void processDebugCommand(char* str, uint8_t len)
@@ -201,13 +299,22 @@ void processDebugCommand(char* str, uint8_t len)
             ToggleError();
             return;
         }
+        else if(str[1] == 's')
+        {
+            xprintf("Debug = %s\n", DebugEnabled() ? "TRUE" : "FALSE");
+            xprintf("Info  = %s\n", InfoEnabled() ? "TRUE" : "FALSE");
+            xprintf("Warn  = %s\n", WarnEnabled() ? "TRUE" : "FALSE");
+            xprintf("Error = %s\n", ErrorEnabled() ? "TRUE" : "FALSE");
+            return;
+        }
     }
     
-    ConsolePrint("Debug commands\r\n");
-    ConsolePrint("dd : toggle debug messages\r\n");
-    ConsolePrint("di : toggle info messages\r\n");
-    ConsolePrint("dw : toggle warn messages\r\n");
-    ConsolePrint("de : toggle error messages\r\n");
+    xprintf("Debug commands\n");
+    xprintf("ds : print enabled message status\n");
+    xprintf("dd : toggle debug messages\n");
+    xprintf("di : toggle info messages\n");
+    xprintf("dw : toggle warn messages\n");
+    xprintf("de : toggle error messages\n");
 }
 
 uint8_t string_len(char* str)
@@ -249,7 +356,7 @@ void ConsoleGetChar(char c)
     }
     
     switch(c)
-    {
+    {        
         case '\r':
         case '\n':
             osMessagePut(uartRxMsgQ, (uint32_t)rxBuff, osWaitForever);

@@ -14,7 +14,19 @@ void UART_Start(USART_TypeDef* uart)
 
 void UART_CharTX(USART_TypeDef* uart, char c)
 {
+    uint32_t ticks = 0;
+    
+    while((uart->SR & USART_SR_TXE) != USART_SR_TXE && ticks < UART_TIMEOUT_TICKS)
+    {
+        ticks++;
+    }
+    
     uart->DR = c;
+    
+    while((uart->SR & USART_SR_TC) != USART_SR_TC && ticks < UART_TIMEOUT_TICKS)
+    {
+        ticks++;
+    }
 }
 
 UART_Status UART_ReadyTX(USART_TypeDef* uart)

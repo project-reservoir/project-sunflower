@@ -81,13 +81,13 @@
  */
 
 
-#define LWIP_PLATFORM_DIAG printf
+#define LWIP_PLATFORM_DIAG DEBUG
 #define LWIP_DEBUGF(debug, message) do { \
                                if ( \
                                    ((debug) & LWIP_DBG_ON) && \
                                    ((debug) & LWIP_DBG_TYPES_ON) && \
                                    ((s16_t)((debug) & LWIP_DBG_MASK_LEVEL) >= LWIP_DBG_MIN_LEVEL)) { \
-                                 LWIP_PLATFORM_DIAG message; \
+                                 DEBUG("%s", message); \
                                  if ((debug) & LWIP_DBG_HALT) { \
                                    while(1); \
                                  } \

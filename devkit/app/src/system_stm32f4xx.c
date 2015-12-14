@@ -260,9 +260,9 @@ void SystemInit(void)
 
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
-  SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+  //SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
 #else
-  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+  //SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
 }
 
@@ -422,6 +422,18 @@ static void SetSysClock(void)
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS ) != RCC_CFGR_SWS_PLL);
     {
     }
+    
+    // enable the LSI oscillator
+    RCC->CSR |= RCC_CSR_LSION;
+    
+     /* Wait till the LSI is ready */
+    while((RCC->CR & RCC_CSR_LSIRDY) == 0)
+    {
+    }
+    
+    // Set the RTC clock source to the LSI
+    RCC->BDCR |= RCC_BDCR_RTCSEL_1;
+    
   }
   else
   { /* If HSE fails to start-up, the application will have wrong clock

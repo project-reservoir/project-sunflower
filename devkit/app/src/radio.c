@@ -6,6 +6,7 @@
 #include "spi.h"
 #include "sensor_conversions.h"
 #include "radio_packets.h"
+#include "xprintf.h"
 #include "debug.h"
 
 // Global variables
@@ -34,6 +35,8 @@ static void       Radio_StartTx_Variable_Packet(uint8_t channel, uint8_t *pioRad
 static void       Radio_StartRX(uint8_t channel);
 static void       SignalRadioTXNeeded(void);
 static SensorData ParseSensorMessage(uint8_t* radioMessage);
+static void       AddDevice(uint32_t mac);
+static void       RemoveDevice(uint32_t mac);
 
 // Global function implementations
 void RadioTaskOSInit(void)
@@ -166,57 +169,46 @@ void RadioTask(void)
         
     while(1)
     {               
-        switch(radioTaskState)
+        // Pend on the message queue that will wakeup the radio task. 
+        // This can come from a TX event or an IRQ event
+        msgQueueEvent = osMessageGet(radioWakeupMsgQ, osWaitForever);
+        
+        if(msgQueueEvent.status == osEventMessage)
         {
-            // Try and join the network. If success, enter CONNECTED state, else return to LOOKING_FOR_BASE_STATION
-            case CONNECTING:
-                break;
-            
-            // Perform regular radio duties. If we loose connection, enter the CONNECTING_TO_BASE_STATION state
-            case CONNECTED:
-                // Pend on the message queue that will wakeup the radio task. 
-                // This can come from a TX event or an IRQ event
-                msgQueueEvent = osMessageGet(radioWakeupMsgQ, osWaitForever);
+            if(msgQueueEvent.value.v == RADIO_IRQ_DETECTED)
+            {
+                RadioTaskHandleIRQ();
+            }
+            else if(msgQueueEvent.value.v == RADIO_TX_NEEDED)
+            {
+                // Wait on the transmit queue
+                // TODO: this should timeout, since it should have a message in it already if we got this far
+                msgQueueEvent = osMessageGet(radioTxMsgQ, osWaitForever);
                 
                 if(msgQueueEvent.status == osEventMessage)
                 {
-                    if(msgQueueEvent.value.v == RADIO_IRQ_DETECTED)
-                    {
-                        RadioTaskHandleIRQ();
-                    }
-                    else if(msgQueueEvent.value.v == RADIO_TX_NEEDED)
-                    {
-                        // Wait on the transmit queue
-                        // TODO: this should timeout, since it should have a message in it already if we got this far
-                        msgQueueEvent = osMessageGet(radioTxMsgQ, osWaitForever);
-                        
-                        if(msgQueueEvent.status == osEventMessage)
-                        {
-                            msg = (RadioMessage*)(msgQueueEvent.value.p);
-                            ((generic_message_t*)(msg->pData))->dst = msg->dest;
-                            ((generic_message_t*)(msg->pData))->src = RadioGetMACAddress();
-                            
-                            // Transmit the packet to the radio hardware
-                            Radio_StartTx_Variable_Packet(pRadioConfiguration->Radio_ChannelNumber, msg->pData, msg->size);
-                            
-                            // Free the data
-                            vPortFree(msg->pData);
-                            vPortFree(msg);
-                        }
-                    }
+                    msg = (RadioMessage*)(msgQueueEvent.value.p);
+                    ((generic_message_t*)(msg->pData))->dst = msg->dest;
+                    ((generic_message_t*)(msg->pData))->src = RadioGetMACAddress();
+                    
+                    // Transmit the packet to the radio hardware
+                    Radio_StartTx_Variable_Packet(pRadioConfiguration->Radio_ChannelNumber, msg->pData, msg->size);
+                    
+                    // Free the data
+                    vPortFree(msg->pData);
+                    vPortFree(msg);
                 }
-                break;
-            
-            // Send ANNOUNCE packets every 20 seconds and see if we get a reply
-            case SEARCHING:
-                // Send message
-                // Wait for reply
-                // If network found, store details and move to -> CONNECTING
-                break;
+            }
         }
-        
+        // Give other tasks in the system a chance to function
         osDelay(10);
     }
+}
+
+// This task runs periodically to manage the nodes in the network
+void RadioLinkManagementTask(void)
+{
+    
 }
 
 // The pointer passed into this function should have been allocated using 
@@ -343,7 +335,7 @@ void RadioTaskHandleIRQ(void)
     // PACKET_RX
     if(phInt & PACKET_RX)
     {
-        DEBUG("Radio RX Event\r\n");
+        DEBUG("Radio RX Event\n");
         
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
         
@@ -360,7 +352,7 @@ void RadioTaskHandleIRQ(void)
                     break;
                 
                 case SENSOR_MSG:
-                    DEBUG("Sensor Message\r\n");
+                    DEBUG("Sensor message received from 0x%08x\n", message->src);
                     // TODO: Store the response for later sending to Bouquet
                     break;
                 
@@ -377,7 +369,7 @@ void RadioTaskHandleIRQ(void)
                     break;
                 
                 case PING:
-                    DEBUG("PING\r\n");
+                    DEBUG("Ping received from 0x%08x\n", message->src);
                     generic_msg = pvPortMalloc(sizeof(generic_message_t));
                 
                     // TODO: check we didn't run out of RAM (we should catch this in the 
@@ -391,11 +383,11 @@ void RadioTaskHandleIRQ(void)
                     break;
 
                 case PONG:
-                    INFO("PONG\r\n");
+                    INFO("Pong received from 0x%08x\n", message->src);
                     break;
                 
                 case ANNOUNCE:
-                    DEBUG("ANNOUNCE RECEIVED\r\n");
+                    DEBUG("Announce received from 0x%08x\n", message->src);
                     generic_msg = pvPortMalloc(sizeof(generic_message_t));
                 
                     // TODO: check we didn't run out of RAM (we should catch this in the 
@@ -406,6 +398,8 @@ void RadioTaskHandleIRQ(void)
                     generic_msg->dst = message->src;
                 
                     SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                
+                    AddDevice(message->src);
                     break;
             }
         }
@@ -437,5 +431,44 @@ void RadioTaskHandleIRQ(void)
 uint32_t RadioGetMACAddress(void)
 {
     return *((uint32_t*)0x1FFF7A10);
+}
+
+void AddDevice(uint32_t mac)
+{
+    for(uint32_t i = 0; i < MAX_NETWORK_MEMBERS; i++)
+    {
+        if(networkTable[i].mac_address == 0x00000000)
+        {
+            networkTable[i].mac_address = mac;
+            return;
+        }
+    }
+    
+    // TODO: if table insertion failed, throw an error or debug
+}
+
+void RemoveDevice(uint32_t mac)
+{
+    for(uint32_t i = 0; i < MAX_NETWORK_MEMBERS; i++)
+    {
+        if(networkTable[i].mac_address == mac)
+        {
+            networkTable[i].mac_address = 0x00000000;
+            return;
+        }
+    }
+    
+    // TODO: if table insertion failed, throw an error or debug
+}
+
+void RadioPrintConnectedDevices(void)
+{
+    for(uint32_t i = 0; i < MAX_NETWORK_MEMBERS; i++)
+    {
+        if(networkTable[i].mac_address != 0x00000000)
+        {
+            xprintf("Device 0x%08x\n", networkTable[i].mac_address);
+        }
+    }
 }
 

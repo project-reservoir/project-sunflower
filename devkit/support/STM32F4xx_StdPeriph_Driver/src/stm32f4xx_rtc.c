@@ -484,7 +484,7 @@ ErrorStatus RTC_Init(RTC_InitTypeDef* RTC_InitStruct)
     /* Exit Initialization mode */
     RTC_ExitInitMode();
 
-    status = SUCCESS;    
+    status = SUCCESS;
   }
   /* Enable the write protection for RTC registers */
   RTC->WPR = 0xFF; 

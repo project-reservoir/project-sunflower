@@ -17,7 +17,6 @@
 //      DD = Build type (01 = DEBUG, 02 = PRODUCTION)
 
 #define APP_VERSION         0x01010101
-#define APP_VERSION_STR     xstr(APP_VERSION)
 
 typedef struct APP_HEADER_T {
 	uint32_t crc32;

@@ -309,7 +309,7 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
+                <StartAddress>0x8004000</StartAddress>
                 <Size>0x100000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
@@ -365,7 +365,7 @@
             <v6LangP>0</v6LangP>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F40XX, USE_STDPERIPH_DRIVER</Define>
+              <Define>STM32F40XX, USE_STDPERIPH_DRIVER, USE_DHCP</Define>
               <Undefine></Undefine>
               <IncludePath>.\app\inc;.\support\CMSIS\Include;.\support\STM32F4x7_ETH_Driver\inc;.\support\STM32F4xx_StdPeriph_Driver\inc;.\support\STM32F4-Discovery;.\support\lwip_v1.3.2\port\STM32F4x7;.\support\lwip_v1.3.2\src\include;.\support\lwip_v1.3.2\src\include\ipv4;.\support\lwip_v1.3.2\src\include\lwip;.\support\lwip_v1.3.2\src\include\netif;.\support\lwip_v1.3.2\port\STM32F4x7\FreeRTOS;.\support\FreeRTOS\include;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\FreeRTOS\CMSIS_RTOS;.\common\inc;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;..\..\project-dandelion\devkit\cross-platform\inc</IncludePath>
             </VariousControls>
@@ -460,6 +460,16 @@
               <FileType>1</FileType>
               <FilePath>..\..\project-dandelion\devkit\cross-platform\src\sensor_conversions.c</FilePath>
             </File>
+            <File>
+              <FileName>ftp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\ftp.c</FilePath>
+            </File>
+            <File>
+              <FileName>time_sync.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\time_sync.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -524,6 +534,16 @@
               <FileName>stm32f4xx_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\support\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\support\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rtc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -815,11 +835,31 @@
               <FileType>5</FileType>
               <FilePath>..\..\project-dandelion\devkit\cross-platform\inc\radio_packets.h</FilePath>
             </File>
+            <File>
+              <FileName>ftp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\ftp.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_header.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\common\inc\app_header.h</FilePath>
+            </File>
+            <File>
+              <FileName>time_sync.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\time_sync.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>bsp/src</GroupName>
           <Files>
+            <File>
+              <FileName>xprintf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\src\xprintf.c</FilePath>
+            </File>
             <File>
               <FileName>stm32f4_discovery.c</FileName>
               <FileType>1</FileType>
@@ -845,6 +885,11 @@
         <Group>
           <GroupName>bsp/inc</GroupName>
           <Files>
+            <File>
+              <FileName>xprintf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\project-dandelion\devkit\cross-platform\inc\xprintf.h</FilePath>
+            </File>
             <File>
               <FileName>spi.h</FileName>
               <FileType>5</FileType>

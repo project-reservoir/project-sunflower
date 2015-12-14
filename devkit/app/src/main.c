@@ -50,6 +50,7 @@
 #include "cmsis_os.h"
 #include "console.h"
 #include "radio.h"
+#include "time_sync.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -63,13 +64,13 @@
 /*--------------- Tasks Priority -------------*/
 #define DHCP_TASK_PRIO      osPriorityNormal      
 #define LED_TASK_PRIO       osPriorityLow
+#define TIME_SYNC_TASK_PRIO osPriorityLow
 #define CONSOLE_TASK_PRIO   osPriorityNormal
 #define RADIO_TASK_PRIO     osPriorityHigh
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 extern struct netif xnetif;
-__IO uint32_t test;
  
 /* Private function prototypes -----------------------------------------------*/
 void LCD_LED_Init(void);
@@ -87,16 +88,11 @@ void ToggleLed4(void * pvParameters)
 {
     while (1)
     {   
-        test = xnetif.ip_addr.addr;
-        /*check if IP address assigned*/
-        if (test != 0) 
+        while(1)
         {
-            while(1)
-            {
-                /* toggle LED4 each 250ms */
-                STM_EVAL_LEDToggle(LED4);
-                vTaskDelay(250);
-            }
+            /* toggle LED4 each 250ms */
+            STM_EVAL_LEDToggle(LED4);
+            vTaskDelay(250);
         }
     }
 }
@@ -129,6 +125,9 @@ int main(void)
     RadioTaskHwInit();
     RadioTaskOSInit();
     
+    TimeSyncHwInit();
+    TimeSyncInit();
+    
     /* Initilaize the LwIP stack */
     LwIP_Init();
 
@@ -150,6 +149,9 @@ int main(void)
     
     osThreadDef(Radio_Thead, (os_pthread)RadioTask, RADIO_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
     osThreadCreate(osThread(Radio_Thead), NULL);
+    
+    osThreadDef(Time_Sync_Thread, (os_pthread)TimeSyncTask, TIME_SYNC_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(Time_Sync_Thread), NULL);
 
     /* Start scheduler */
     vTaskStartScheduler();
