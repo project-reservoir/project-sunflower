@@ -9,6 +9,8 @@
 #include "xprintf.h"
 #include "ftp.h"
 #include "time_sync.h"
+#include "si446x_api_lib.h"
+#include "si446x_cmd.h"
 #include <string.h>
 
 osMessageQId        uartRxMsgQ;

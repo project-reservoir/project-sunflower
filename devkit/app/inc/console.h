@@ -11,6 +11,7 @@
 #define USARTn_TX_PIN_SOURCE             GPIO_PinSource8
 #define USARTn_TX_GPIO_PORT              GPIOD 
 #define USARTn_TX_AF                     GPIO_AF_USART3
+
 #define USARTn_RX_PIN                    GPIO_Pin_9
 #define USARTn_RX_PIN_SOURCE             GPIO_PinSource9
 #define USARTn_RX_GPIO_PORT              GPIOD 

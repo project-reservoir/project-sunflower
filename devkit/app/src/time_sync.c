@@ -14,7 +14,9 @@ void TimeSyncHwInit(void)
 {
     // Initialize the RTC here
     RTC_InitTypeDef rtc;
-    
+    rtc.RTC_HourFormat = RTC_HourFormat_24;
+    rtc.RTC_SynchPrediv = 128; // LSI clock is ~32.768 kHz, which is close to the default values
+    rtc.RTC_SynchPrediv = 256;
     RTC_Init(&rtc);
 }
 

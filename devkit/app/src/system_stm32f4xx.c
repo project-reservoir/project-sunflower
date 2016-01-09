@@ -390,13 +390,13 @@ static void SetSysClock(void)
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     PWR->CR |= PWR_CR_PMODE;
     
-    /* HCLK = SYSCLK / 1*/
+    /* HCLK = SYSCLK / 1 */
     RCC->CFGR |= RCC_CFGR_HPRE_DIV1;
       
-    /* PCLK2 = HCLK / 2*/
+    /* PCLK2 = HCLK / 2 */
     RCC->CFGR |= RCC_CFGR_PPRE2_DIV2;
     
-    /* PCLK1 = HCLK / 4*/
+    /* PCLK1 = HCLK / 4 */
     RCC->CFGR |= RCC_CFGR_PPRE1_DIV4;
 
     /* Configure the main PLL */
@@ -429,11 +429,7 @@ static void SetSysClock(void)
      /* Wait till the LSI is ready */
     while((RCC->CR & RCC_CSR_LSIRDY) == 0)
     {
-    }
-    
-    // Set the RTC clock source to the LSI
-    RCC->BDCR |= RCC_BDCR_RTCSEL_1;
-    
+    }    
   }
   else
   { /* If HSE fails to start-up, the application will have wrong clock

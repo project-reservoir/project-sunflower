@@ -8,6 +8,8 @@
 #include "radio_packets.h"
 #include "xprintf.h"
 #include "debug.h"
+#include "core_cmInstr.h"
+#include "led.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -63,6 +65,7 @@ void RadioTaskOSInit(void)
     spiConfig.SPI_FirstBit           = SPI_FirstBit_MSB;
     spiConfig.SPI_NSS                = SPI_NSS_Soft;
     spiConfig.SPI_Mode               = SPI_Mode_Master;
+    spiConfig.SPI_CRCPolynomial      = 0x1;
     
     SPI_Init(SPIn, &spiConfig);
     
@@ -144,6 +147,14 @@ void RadioTask(void)
     {
         if(SendRadioConfig() == SI446X_SUCCESS)
         {
+            // Verify the radio actually came up:
+            si446x_part_info();
+            
+            if(Si446xCmd.PART_INFO.PART != 0x4463)
+            {
+                ERR("Radio did not return correct part number!\n");
+            }                
+            
             radioConfigured = 1;
         }
         else
@@ -326,15 +337,19 @@ void RadioTaskHandleIRQ(void)
     chipInt = Si446xCmd.GET_INT_STATUS.CHIP_PEND; // & Si446xCmd.GET_INT_STATUS.CHIP_STATUS;
     modemInt = Si446xCmd.GET_INT_STATUS.MODEM_PEND; // & Si446xCmd.GET_INT_STATUS.MODEM_STATUS;      
     
+    DEBUG("phInt: %x, chipInt: %x, modemInt: %x\n", phInt, chipInt, modemInt);
+    
     // PACKET_SENT
     if(phInt & PACKET_SENT)
     {
         // TODO: Packet was transmitted, move to the "wait for ACK" state
+        DEBUG("Packet TX completed event\n");
     }
     
     // PACKET_RX
     if(phInt & PACKET_RX)
     {
+        BlinkLed3();
         DEBUG("Radio RX Event\n");
         
         si446x_read_rx_fifo(RadioConfiguration.Radio_PacketLength, rxBuff);
@@ -408,6 +423,7 @@ void RadioTaskHandleIRQ(void)
     // CRC_ERROR
     if(phInt & CRC_ERROR)
     {
+        DEBUG("Radio CRC error Event\n");
         // TODO: Recevied a garbled packet. Reply with a NAK
     }
      

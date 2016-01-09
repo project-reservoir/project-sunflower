@@ -51,6 +51,8 @@
 #include "console.h"
 #include "radio.h"
 #include "time_sync.h"
+#include "led.h"
+#include "debug.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -73,29 +75,10 @@
 extern struct netif xnetif;
  
 /* Private function prototypes -----------------------------------------------*/
-void LCD_LED_Init(void);
 extern void tcpecho_init(void);
 extern void udpecho_init(void);
 
 /* Private functions ---------------------------------------------------------*/
-
-/**
-  * @brief  Toggle Led4 task
-  * @param  pvParameters not used
-  * @retval None
-  */
-void ToggleLed4(void * pvParameters)
-{
-    while (1)
-    {   
-        while(1)
-        {
-            /* toggle LED4 each 250ms */
-            STM_EVAL_LEDToggle(LED4);
-            vTaskDelay(250);
-        }
-    }
-}
 
 /**
   * @brief  Main program.
@@ -113,6 +96,7 @@ int main(void)
        To reconfigure the default setting of SystemInit() function, refer to
        system_stm32f4xx.c file
      */
+    
     /*Initialize LCD and Leds */ 
     LCD_LED_Init();
 
@@ -141,7 +125,7 @@ int main(void)
 #endif
 
     /* Start toogleLed4 task : Toggle LED4  every 250ms */
-    osThreadDef(LED_Thread, (os_pthread)ToggleLed4, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadDef(LED_Thread, (os_pthread)ToggleLed4Task, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(LED_Thread), NULL);
     
     osThreadDef(Console_Thead, (os_pthread)ConsoleTask, CONSOLE_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
@@ -158,16 +142,6 @@ int main(void)
 
     /* We should never get here as control is now taken by the scheduler */
     for( ;; );
-}
-
-/**
-  * @brief  Initializes the STM324xG-EVAL's LCD and LEDs resources.
-  * @param  None
-  * @retval None
-  */
-void LCD_LED_Init(void)
-{
-    STM_EVAL_LEDInit(LED4); 
 }
 
 void vApplicationStackOverflowHook(void)
@@ -199,7 +173,11 @@ void assert_failed(uint8_t* file, uint32_t line)
 {
     /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
+    
+    ERR("ASSERT FAILED in %s at line %d", (char*)file, line);
+    
+    AssertBlink();
+    
     /* Infinite loop */
     while (1)
     {}
