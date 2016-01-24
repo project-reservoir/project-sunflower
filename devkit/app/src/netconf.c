@@ -47,6 +47,7 @@
 #include "main.h"
 #include "netconf.h"
 #include "tcpip.h"
+#include "debug.h"
 #include <stdio.h>
 
 /* Private typedef -----------------------------------------------------------*/
@@ -172,6 +173,8 @@ void LwIP_DHCP_task(void * pvParameters)
           
           /* Stop DHCP */
           dhcp_stop(&xnetif);
+            
+          xprintf("IP Address Assigned:  %d.%d.%d.%d\n", iptab[3], iptab[2], iptab[1], iptab[0]);
 
 #ifdef USE_LCD      
           iptab[0] = (uint8_t)(IPaddress >> 24);

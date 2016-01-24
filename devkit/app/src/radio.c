@@ -109,8 +109,8 @@ void RadioTaskHwInit(void)
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
-    GPIO_Init(SPIn_NSS_GPIO_PORT, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_Init(RADIO_NIRQ_GPIO_PORT, &GPIO_InitStructure);
     
     // NIRQ config
     GPIO_InitStructure.GPIO_Pin   = RADIO_NIRQ_PIN;
@@ -153,9 +153,11 @@ void RadioTask(void)
             if(Si446xCmd.PART_INFO.PART != 0x4463)
             {
                 ERR("Radio did not return correct part number!\n");
-            }                
-            
-            radioConfigured = 1;
+            }
+            else
+            {
+                radioConfigured = 1;
+            }
         }
         else
         {
@@ -165,7 +167,9 @@ void RadioTask(void)
             //       sensor polling is probably a waste of power
             
             // TODO: do something else if Radio config fails
-            assert_param(0);
+            // assert_param(0);
+            ERR("Radio configuration failed! Retrying in 2 seconds...\n");
+            osDelay(2000);
         }
     }
     

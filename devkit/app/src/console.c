@@ -204,6 +204,10 @@ void processFTPCommand(char* str, uint8_t len)
                 FTP_Init();
                 return;
             
+            case 'f':
+                FTP_DownloadFirmware();
+                return;
+            
             case 'd':
                 IP4_ADDR(&ipaddr, 169, 254, 129, 99);
                 FTP_Connect(&ipaddr, 21);
@@ -240,6 +244,7 @@ void processFTPCommand(char* str, uint8_t len)
     xprintf("fi : initialize FTP\n");
     xprintf("fd : connect to default FTP host\n");
     xprintf("fc <ip> <port>: connect to an FTP server at 'ip' on 'port'\n");
+    xprintf("ff : perform a full firmware download cycle from waterloo.autom8ed.com\n");
 }
 
 void processRadioCommand(char* str, uint8_t len)

@@ -3,9 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "xprintf.h"
+#include "lwip/sockets.h"
 
+#define FTP_SERVER  "waterloo.autom8ed.com"
 #define FTP_USER    "themachine"
 #define FTP_PASS    "s4mar1tan"
+#define FTP_PORT    1337
+
 #define TMP_STR_LEN 64
 
 struct netconn *g_conn          = NULL;
@@ -17,12 +21,35 @@ static bool FTP_PASV(void);
 
 void FTP_Init(void)
 {
-    g_conn = netconn_new(NETCONN_TCP);
+    
+    lwip_socket_init();
+    if(!g_conn) 
+    {
+        g_conn = netconn_new(NETCONN_TCP);
+    }
     
     if (g_conn == NULL) 
     {
         WARN("Netconn initialization failed\n");
     }
+}
+
+bool FTP_DownloadFirmware(void)
+{
+    struct ip_addr addr;
+    err_t err;
+    
+    err = netconn_gethostbyname(FTP_SERVER, &addr);
+    
+    if(err != ERR_OK)
+    {
+        ERR("DNS could not resolve hostname: %s\n", lwip_strerr(err));
+        return false;
+    }
+    
+    FTP_Init();
+    FTP_Connect(&addr, FTP_PORT);
+    FTP_GetFwVersions(NULL, NULL, 0);
 }
 
 bool FTP_Connect(struct ip_addr *addr, uint16_t port)
@@ -44,7 +71,7 @@ bool FTP_Connect(struct ip_addr *addr, uint16_t port)
     
     if(err != ERR_OK) 
     {
-        ERR("Netconn could not connect to host\n");
+        ERR("(FTP) Netconn could not connect to host %s\n", lwip_strerr(err));
         return false;
     }
     

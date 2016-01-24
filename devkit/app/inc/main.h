@@ -70,22 +70,22 @@
 #define MAC_ADDR5   00
  
 /*Static IP ADDRESS*/
-#define IP_ADDR0   169
-#define IP_ADDR1   254
-#define IP_ADDR2   129
-#define IP_ADDR3   100
+#define IP_ADDR0   192
+#define IP_ADDR1   168
+#define IP_ADDR2   0
+#define IP_ADDR3   60
    
 /*NETMASK*/
 #define NETMASK_ADDR0   255
 #define NETMASK_ADDR1   255
-#define NETMASK_ADDR2   0
+#define NETMASK_ADDR2   255
 #define NETMASK_ADDR3   0
 
 /*Gateway Address*/
-#define GW_ADDR0   169
-#define GW_ADDR1   254
-#define GW_ADDR2   129
-#define GW_ADDR3   100 
+#define GW_ADDR0   192
+#define GW_ADDR1   168
+#define GW_ADDR2   0
+#define GW_ADDR3   1 
 
 /* MII and RMII mode selection, for STM324xG-EVAL Board(MB786) RevB ***********/
 #define RMII_MODE 

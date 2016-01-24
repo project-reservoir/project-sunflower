@@ -89,7 +89,7 @@ bool TimeSync(void)
             if(len == 4)
             {
                 received_time = ((((uint8_t*)data)[0]) << 24) | ((((uint8_t*)data)[1]) << 16) | ((((uint8_t*)data)[2]) << 8) | (((uint8_t*)data)[3]);
-                INFO("Time sync received! Current time is %u", received_time);
+                INFO("Time sync received! Current time is %u\n", received_time);
                 
                 // Update the RTC
             }
