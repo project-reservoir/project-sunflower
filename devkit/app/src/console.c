@@ -2,7 +2,7 @@
 #include "stm32f4xx.h"
 #include "uart.h"
 #include "console.h"
-#include "app_header.h"
+#include "sunflower_app_header.h"
 #include "debug.h"
 #include "radio.h"
 #include "radio_packets.h"
@@ -168,7 +168,7 @@ void processString(char* str)
             processRadioCommand(str, len);
             break;
         case 'v':
-            xprintf("SUNFLOWER OS V 0x%08x\n", APP_VERSION);
+            xprintf("SUNFLOWER OS V 0x%08x\n", SUNFLOWER_APP_VERSION);
             xprintf("BUILD DATE: %s @ %s\n\n", __DATE__, __TIME__);
             break;
         default:
@@ -188,7 +188,7 @@ void processString(char* str)
 
 void processFTPCommand(char* str, uint8_t len)
 {   
-    struct ip_addr  ipaddr;
+    ip_addr_t       ipaddr;
     long            port;
     long            ip_temp_a;
     long            ip_temp_b;

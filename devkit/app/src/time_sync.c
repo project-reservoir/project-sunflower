@@ -54,7 +54,7 @@ bool TimeSync(void)
     void* data;
     uint16_t len;
     struct netbuf *buf;
-    struct ip_addr addr;
+    ip_addr_t addr;
     uint32_t received_time;
     
     if(g_conn == NULL)
@@ -76,10 +76,11 @@ bool TimeSync(void)
     if(err != ERR_OK) 
     {
         ERR("Netconn could not connect to host %s\n", lwip_strerr(err));
+        netconn_close(g_conn);
         return false;
     }
     
-    if((buf = netconn_recv(g_conn)) != NULL)
+    if(netconn_recv(g_conn, &buf) == ERR_OK)
     {
         do 
         {

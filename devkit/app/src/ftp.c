@@ -19,10 +19,8 @@ bool            g_connected     = false;
 static bool FTP_SendCommand(char* command, size_t msg_size);
 static bool FTP_PASV(void);
 
-void FTP_Init(void)
-{
-    
-    lwip_socket_init();
+bool FTP_Init(void)
+{    
     if(!g_conn) 
     {
         g_conn = netconn_new(NETCONN_TCP);
@@ -31,12 +29,15 @@ void FTP_Init(void)
     if (g_conn == NULL) 
     {
         WARN("Netconn initialization failed\n");
+        return false;
     }
+    
+    return true;
 }
 
 bool FTP_DownloadFirmware(void)
 {
-    struct ip_addr addr;
+    ip_addr_t addr;
     err_t err;
     
     err = netconn_gethostbyname(FTP_SERVER, &addr);
@@ -47,12 +48,19 @@ bool FTP_DownloadFirmware(void)
         return false;
     }
     
-    FTP_Init();
-    FTP_Connect(&addr, FTP_PORT);
-    FTP_GetFwVersions(NULL, NULL, 0);
+    if(!FTP_Init())
+        return false;
+    
+    if(!FTP_Connect(&addr, FTP_PORT))
+        return false;
+    
+    if(!FTP_GetFwVersions(NULL, NULL, 0))
+        return false;
+    
+    return true;
 }
 
-bool FTP_Connect(struct ip_addr *addr, uint16_t port)
+bool FTP_Connect(ip_addr_t *addr, uint16_t port)
 {
     err_t err;   
     char tmp[TMP_STR_LEN];
@@ -72,6 +80,7 @@ bool FTP_Connect(struct ip_addr *addr, uint16_t port)
     if(err != ERR_OK) 
     {
         ERR("(FTP) Netconn could not connect to host %s\n", lwip_strerr(err));
+        netconn_close(g_conn);
         return false;
     }
     
@@ -85,7 +94,7 @@ bool FTP_Connect(struct ip_addr *addr, uint16_t port)
     assert_param(size > 0 && size < TMP_STR_LEN);
     netconn_write(g_conn, tmp, size, NETCONN_COPY);
     
-    while((buf = netconn_recv(g_conn)) != NULL)
+    while((err = netconn_recv(g_conn, &buf)) == ERR_OK)
     {
         bool logged_in = false;
         
@@ -135,7 +144,7 @@ bool FTP_SendCommand(char* command, size_t msg_size)
         return false;
     }
     
-    while((buf = netconn_recv(g_conn)) != NULL)
+    while(netconn_recv(g_conn, &buf) == ERR_OK)
     {
         bool done = false;
         do 
@@ -189,7 +198,7 @@ bool FTP_PASV(void)
         return false;
     }
     
-    while((buf = netconn_recv(g_conn)) != NULL)
+    while(netconn_recv(g_conn, &buf) == ERR_OK)
     {
         bool done = false;
         do 
@@ -208,7 +217,8 @@ bool FTP_PASV(void)
                 long            port_a;
                 long            port_b;
                 char*           first_num;
-                struct ip_addr  addr;
+                ip_addr_t       addr;
+                
                 for(uint8_t i = 0; i < len; i++)
                 {
                     if(((char*)data)[i] == '(')
@@ -298,7 +308,7 @@ bool FTP_GetFwVersions(char* sunflower, char* dandelion, uint8_t max_len)
         return false;
     }
     
-    while((buf = netconn_recv(g_data)) != NULL)
+    while(netconn_recv(g_data, &buf) == ERR_OK)
     {
         do
         {

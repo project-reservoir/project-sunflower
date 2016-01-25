@@ -32,72 +32,262 @@
 
 
 #include "lwip/opt.h"
+#include "xprintf.h"
+#include "stdbool.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include "fw_update.h"
+#include "tcpecho.h"
+#include "stm32f4xx.h"
 
 #if LWIP_NETCONN
 
 #include "lwip/sys.h"
 #include "lwip/api.h"
 
-#define TCPECHO_THREAD_PRIO  osPriorityNormal
+#define TCPECHO_THREAD_PRIO  osPriorityAboveNormal
 
+#define TCP_FW_PAYLOAD_BYTES 256
 
+const char* banner = "SUNFLOWER OS TCP/IP TERMINAL INTERFACE";
+
+void net_printf(struct netconn *conn, const char *fmt, ...);
+void net_bin_nack(struct netconn *conn);
+void net_bin_ack(struct netconn *conn);
 
 /*-----------------------------------------------------------------------------------*/
 static void tcpecho_thread(void *arg)
 {
-  struct netconn *conn, *newconn;
-  err_t err;
+    struct netconn *conn, *newconn;
+    err_t err;
 
-  LWIP_UNUSED_ARG(arg);
+    LWIP_UNUSED_ARG(arg);
 
-  /* Create a new connection identifier. */
-  conn = netconn_new(NETCONN_TCP);
-  
-  if (conn!=NULL) {  
-    /* Bind connection to well known port number 7. */
-    err = netconn_bind(conn, NULL, 7);
-    
-    if (err == ERR_OK) {
-      /* Tell connection to go into listening mode. */
-      netconn_listen(conn);
-    
-      while (1) {
-        /* Grab new connection. */
-        newconn = netconn_accept(conn);
-    
-        /* Process the new connection. */
-        if (newconn) {
-          struct netbuf *buf;
-          void *data;
-          u16_t len;
-      
-          while ((buf = netconn_recv(newconn)) != NULL) {
-            do {
-              netbuf_data(buf, &data, &len);              
-              netconn_write(newconn, data, len, NETCONN_COPY);
-          
-            } while (netbuf_next(buf) >= 0);
-          
-            netbuf_delete(buf);
-          }
-        
-          /* Close connection and discard connection identifier. */
-          netconn_close(newconn);
-          netconn_delete(newconn);
+    /* Create a new connection identifier. */
+    conn = netconn_new(NETCONN_TCP);
+
+    if (conn != NULL) {
+        /* Bind connection to well known port number 7. */
+        err = netconn_bind(conn, NULL, 1337);
+
+        if (err == ERR_OK) {
+            /* Tell connection to go into listening mode. */
+            netconn_listen(conn);
+
+            while (1) {
+                /* Grab new connection. */
+                err = netconn_accept(conn, &newconn);
+
+                /* Process the new connection. */
+                if (err == ERR_OK) {
+                    struct netbuf *buf;
+                    void   *data;
+                    u16_t  len;
+                    bool   fw_update_mode = false;
+                    
+                    net_printf(newconn, "%s\r\n", banner);
+
+                    while ((err = netconn_recv(newconn, &buf)) == ERR_OK) {
+                        do {
+                            netbuf_data(buf, &data, &len);              
+                            
+                            // Ignore all 1 char or less sequences
+                            if(len > 0)
+                            {
+                                if(!fw_update_mode)
+                                {
+                                    switch(((char*)data)[0]) 
+                                    {
+                                        case 'm':
+                                            switch(((char*)data)[1])
+                                            {
+                                                case 'f':
+                                                    fw_update_mode = true;
+                                                    continue;
+                                            }
+                                            
+                                            net_printf(newconn, "mf : enter firmware update mode. All ASCII output will cease.");
+                                            net_printf(newconn, "Can be disabled by restarting TCP connection or sending the ");
+                                            net_printf(newconn, "EXIT_FW_UPDATE_MODE command.\r\n");
+                                            
+                                            break;
+                                            
+                                        case 't':
+                                            switch(((char*)data)[1]) 
+                                            {
+                                                case 's':
+                                                    continue;
+                                            }
+                                            net_printf(newconn, "ts <UNIX time> : set the system time to <UNIX time>\r\n");
+                                            
+                                            break;
+                                        
+                                        default:
+                                            net_printf(newconn, "m : mode control\r\n");
+                                            net_printf(newconn, "t : time control\r\n");
+                                            break;
+                                    }
+                                    net_printf(newconn, "\r\n\n");
+                                }
+                                else if(fw_update_mode)
+                                {                                    
+                                    switch(((char*)data)[0]) 
+                                    {
+                                        // PAYLOAD, type, addr[4], payload[64]
+                                        case PAYLOAD:
+                                            if(len == (TCP_FW_PAYLOAD_BYTES + 6))
+                                            {
+                                                uint32_t addr = (((uint8_t*)data)[5] << 24) | (((uint8_t*)data)[4] << 16) | (((uint8_t*)data)[3] << 8) | (((uint8_t*)data)[2]);
+                                                
+                                                switch(((uint8_t*)data)[1])
+                                                {
+                                                    // DANDELION TYPE
+                                                    case DANDELION_DEVICE:
+                                                        for(uint16_t i = 0; i < TCP_FW_PAYLOAD_BYTES; i += 4)
+                                                        {
+                                                            uint32_t word = (((uint8_t*)data)[6 + i] << 24) | (((uint8_t*)data)[7 + i] << 16) | (((uint8_t*)data)[8 + i] << 8) | (((uint8_t*)data)[9 + i]);
+                                                            Write_Dandelion_Word(addr + i, word);
+                                                        }
+                                                        net_bin_ack(newconn);
+                                                        break;
+                                                    
+                                                    // SUNFLOWER TYPE
+                                                    case SUNFLOWER_DEVICE:
+                                                        for(uint8_t i = 0; i < 64; i++)
+                                                        {
+                                                            uint32_t word = (((uint8_t*)data)[6 + i] << 24) | (((uint8_t*)data)[7 + i] << 16) | (((uint8_t*)data)[8 + i] << 8) | (((uint8_t*)data)[9 + i]);
+                                                            Write_Sunflower_Word(addr, word);
+                                                        }
+                                                        net_bin_ack(newconn);
+                                                        break;
+                                                    
+                                                    default:
+                                                        net_bin_nack(newconn);
+                                                        break;
+                                                }
+                                            }
+                                            break;
+                                        
+                                        // START, type
+                                        case START:
+                                            if(len == 2)
+                                            {                                                
+                                                switch(((uint8_t*)data)[1])
+                                                {
+                                                    // DANDELION TYPE
+                                                    case DANDELION_DEVICE:
+                                                        FLASH_Unlock();
+                                                        Erase_Dandelion_Image();
+                                                        net_bin_ack(newconn);
+                                                        break;
+                                                    
+                                                    // SUNFLOWER TYPE
+                                                    case SUNFLOWER_DEVICE:
+                                                        FLASH_Unlock();
+                                                        Erase_Sunflower_Image();
+                                                        net_bin_ack(newconn);
+                                                        break;
+                                                    
+                                                    default:
+                                                        net_bin_nack(newconn);
+                                                        break;
+                                                }
+                                            }
+                                            break;
+                                                                                
+                                        // VALIDATE, type
+                                        case VALIDATE:
+                                            if(len == 2)
+                                            {                                                
+                                                switch(((uint8_t*)data)[1])
+                                                {
+                                                    // DANDELION TYPE
+                                                    case DANDELION_DEVICE:
+                                                        Erase_Dandelion_Image();
+                                                        net_bin_ack(newconn);
+                                                        break;
+                                                    
+                                                    // SUNFLOWER TYPE
+                                                    case SUNFLOWER_DEVICE:
+                                                        Erase_Sunflower_Image();
+                                                        net_bin_ack(newconn);
+                                                        break;
+                                                    
+                                                    default:
+                                                        net_bin_nack(newconn);
+                                                        break;
+                                                }
+                                            }
+                                            break;
+                                        
+                                        // EXIT BINARY MODE
+                                        case EXIT_MODE:
+                                            fw_update_mode = false;
+                                            net_bin_ack(newconn);
+                                            break;
+                                        
+                                        // EXIT BINARY MODE
+                                        case END:
+                                            FLASH_Lock();
+                                            net_bin_ack(newconn);
+                                            break;
+                                        
+                                        default:
+                                            ERR("Unexpected TCP command");
+                                            net_bin_nack(newconn);
+                                            break;
+                                    }
+                                }
+                            }
+                            
+                        } while (netbuf_next(buf) >= 0);
+                        
+                        netbuf_delete(buf);
+                    }
+
+                    /* Close connection and discard connection identifier. */
+                    netconn_close(newconn);
+                    netconn_delete(newconn);
+                }
+            }
+        } else {
+            xprintf(" can not bind TCP netconn");
         }
-      }
     } else {
-      printf(" can not bind TCP netconn");
+        xprintf("can not create TCP netconn");
     }
-  } else {
-    printf("can not create TCP netconn");
-  }
 }
 /*-----------------------------------------------------------------------------------*/
 
+void net_printf(struct netconn *conn, const char *fmt, ...)
+{
+    char buffer[64];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, 64, fmt, args);
+    
+    netconn_write(conn, buffer, strlen(buffer), NETCONN_COPY);
+}
+
+void net_bin_ack(struct netconn *conn)
+{
+    uint8_t buffer[1];
+    buffer[0] = ACK;
+    
+    netconn_write(conn, buffer, 1, NETCONN_COPY);
+}
+    
+void net_bin_nack(struct netconn *conn)
+{
+    uint8_t buffer[1];
+    buffer[0] = NACK;
+    
+    netconn_write(conn, buffer, 1, NETCONN_COPY);
+}
+
 void tcpecho_init(void)
 {
-  sys_thread_new("tcpecho_thread", tcpecho_thread, NULL, DEFAULT_THREAD_STACKSIZE, TCPECHO_THREAD_PRIO);
+    sys_thread_new("tcpecho_thread", tcpecho_thread, NULL, DEFAULT_THREAD_STACKSIZE, TCPECHO_THREAD_PRIO);
 }
 /*-----------------------------------------------------------------------------------*/
 

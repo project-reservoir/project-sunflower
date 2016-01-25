@@ -109,8 +109,8 @@ int main(void)
     RadioTaskHwInit();
     RadioTaskOSInit();
     
-    TimeSyncHwInit();
-    TimeSyncInit();
+    //TimeSyncHwInit();
+    //TimeSyncInit();
     
     /* Initilaize the LwIP stack */
     LwIP_Init();
@@ -134,8 +134,8 @@ int main(void)
     osThreadDef(Radio_Thead, (os_pthread)RadioTask, RADIO_TASK_PRIO, 1, configMINIMAL_STACK_SIZE * 2);
     osThreadCreate(osThread(Radio_Thead), NULL);
     
-    osThreadDef(Time_Sync_Thread, (os_pthread)TimeSyncTask, TIME_SYNC_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
-    osThreadCreate(osThread(Time_Sync_Thread), NULL);
+    //osThreadDef(Time_Sync_Thread, (os_pthread)TimeSyncTask, TIME_SYNC_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    //osThreadCreate(osThread(Time_Sync_Thread), NULL);
 
     /* Start scheduler */
     vTaskStartScheduler();

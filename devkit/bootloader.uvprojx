@@ -443,9 +443,9 @@
               <FilePath>.\bootloader\inc\system_interrupts.h</FilePath>
             </File>
             <File>
-              <FileName>app_header.h</FileName>
+              <FileName>sunflower_app_header.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\common\inc\app_header.h</FilePath>
+              <FilePath>.\common\inc\sunflower_app_header.h</FilePath>
             </File>
           </Files>
         </Group>

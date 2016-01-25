@@ -1,4 +1,4 @@
-#include "app_header.h"
+#include "sunflower_app_header.h"
 #include "stm32f4xx.h"
 
 // DEFINES
@@ -7,11 +7,11 @@
 extern void launch(uint32_t stackPtr, uint32_t progCtr);
 
 // GLOBAL VARIABLES
-APP_HEADER* main_app = (APP_HEADER*)MAIN_APP_START;
+SUNFLOWER_APP_HEADER* main_app = (SUNFLOWER_APP_HEADER*)SUNFLOWER_MAIN_APP_START;
 
 // LOCAL FUNCTION DECLARATIONS
-void createIVT(APP_HEADER* app);
-void launchImage(APP_HEADER* app);
+void createIVT(SUNFLOWER_APP_HEADER* app);
+void launchImage(SUNFLOWER_APP_HEADER* app);
 
 // GLOBAL FUNCTIONS
 int main(void)
@@ -21,7 +21,7 @@ int main(void)
     for(;;);
 }
 
-void launchImage(APP_HEADER* app)
+void launchImage(SUNFLOWER_APP_HEADER* app)
 {
     uint32_t stackPtr = (uint32_t)(*((uint32_t*)app));
     uint32_t progCtr  = (uint32_t)(*((uint32_t*)((uint32_t)app + 4))) | ARM_THUMB_MODE;
