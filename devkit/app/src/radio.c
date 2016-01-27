@@ -420,6 +420,14 @@ void RadioTaskHandleIRQ(void)
                 
                     AddDevice(message->src);
                     break;
+                
+                case RSSI:
+                    xprintf("RSSI info (+- 1 dBm): \r\n");
+                    xprintf("CURR_RSSI: %d dBm\r\n", (int16_t)(message->payload.rssi_message.curr_rssi / 2) - 140);
+                    xprintf("LATCH_RSSI: %d dBm\r\n", (int16_t)(message->payload.rssi_message.latch_rssi / 2) - 140);
+                    xprintf("ANT1_RSSI: %d dBm\r\n", (int16_t)(message->payload.rssi_message.ant1_rssi / 2) - 140);
+                    xprintf("ANT2_RSSI: %d dBm\r\n", (int16_t)(message->payload.rssi_message.ant2_rssi / 2) - 140);
+                    break;
             }
         }
     }
@@ -487,8 +495,18 @@ void RadioPrintConnectedDevices(void)
     {
         if(networkTable[i].mac_address != 0x00000000)
         {
-            xprintf("Device 0x%08x\n", networkTable[i].mac_address);
+            xprintf("[%d]    0x%08x\n", i, networkTable[i].mac_address);
         }
     }
+}
+
+uint32_t RadioGetDeviceMAC(uint16_t position)
+{
+    if(position < MAX_NETWORK_MEMBERS)
+    {
+        return networkTable[position].mac_address;
+    }
+    
+    return 0x00000000;
 }
 

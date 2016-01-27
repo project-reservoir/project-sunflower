@@ -23,6 +23,7 @@ uint8_t             rxBuffPos = 0;
 uint8_t             txBuffPos = 0;
 
 uint8_t             console_task_started = 0;
+uint16_t            selected_network_table = 0;
 
 char                testString[] = {"TEST TEST TEST"};
 
@@ -164,13 +165,16 @@ void processString(char* str)
                 xprintf("tp: print the current RTC time\n");
             }
             break;
+            
         case 'x':
             processRadioCommand(str, len);
             break;
+        
         case 'v':
             xprintf("SUNFLOWER OS V 0x%08x\n", SUNFLOWER_APP_VERSION);
             xprintf("BUILD DATE: %s @ %s\n\n", __DATE__, __TIME__);
             break;
+        
         default:
             xprintf("h : print help\n");
             xprintf("f : FTP commands\n");
@@ -255,6 +259,17 @@ void processRadioCommand(char* str, uint8_t len)
     {
         switch(str[1])
         {
+            case 'r':
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+            
+                // TODO: check we didn't run out of RAM (we should catch this in the 
+                //       application Malloc failed handler, but just in case)
+            
+                generic_msg->cmd = RSSI;
+            
+                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                return;
+            
             case 'p':
                 generic_msg = pvPortMalloc(sizeof(generic_message_t));
             
@@ -267,19 +282,56 @@ void processRadioCommand(char* str, uint8_t len)
                 return;
             
             case 'l':
+            {
+                uint32_t current_mac = RadioGetDeviceMAC(selected_network_table);
+                if(current_mac != 0x00000000)
+                {
+                    xprintf("Currently Selected MAC: 0x%08x\r\n", current_mac);
+                }
+                else
+                {
+                    xprintf("Currently Selected MAC: NONE\r\n");
+                }
+                xprintf("Currently connected devices: \r\n");
                 RadioPrintConnectedDevices();
                 return;
-            
+            }
             case 'i':
                 xprintf("Radio MAC: 0x%08x\n", RadioGetMACAddress());
                 return;
+            
+            case 'd':
+            {
+                if(len > 4)
+                {                
+                    char* first_num;
+                    long  network_position;
+                    first_num = &str[3];
+                    xatoi(&first_num, &network_position);
+                    
+                    selected_network_table = network_position;
+                    
+                    uint32_t current_mac = RadioGetDeviceMAC(selected_network_table);
+                    if(current_mac != 0x00000000)
+                    {
+                        xprintf("Selected MAC: 0x%08x\r\n", current_mac);
+                    }
+                    else
+                    {
+                        xprintf("Error selecting MAC address!\r\n");
+                    }
+                    return;
+                }
+            }
         }
     }
     
-    xprintf("Radio Commands\n");
-    xprintf("xi : print radio info\n");
-    xprintf("xp : send a radio ping packet\n");
-    xprintf("xl : print a list of connected nodes\n");
+    xprintf("Radio Commands\r\n");
+    xprintf("xr : request RSSI info from remote unit\r\n");
+    xprintf("xi : print radio info\r\n");
+    xprintf("xp : send a radio ping packet\r\n");
+    xprintf("xl : print a list of connected / currently selected nodes\r\n");
+    xprintf("xd <device num> : select a device for command targets\r\n");
 }
 
 void processDebugCommand(char* str, uint8_t len)
