@@ -371,20 +371,22 @@ void RadioTaskHandleIRQ(void)
                     break;
                 
                 case SENSOR_MSG:
-                    DEBUG("Sensor message received from 0x%08x\n", message->src);
+                    INFO("Sensor message received from 0x%08x\n", message->src);
+                    // TODO: finish adding sensor conversions to this call
+                    // INFO("Temp (c, s1, s2, s3, a): %d, %d, %d, %d, %d\n", message->payload.sensor_message.chip_temp);
+                    INFO("Temp (chip): %d\n", message->payload.sensor_message.chip_temp);
+                    // TODO: Uncomment this code after OEC demo
+                    // INFO("Moist (s1, s2, s3): %d, %d, %d\n", message->payload.sensor_message.moisture0, message->payload.sensor_message.moisture1, message->payload.sensor_message.moisture2);
+                    INFO("Moist (s3): %d\n", message->payload.sensor_message.moisture2);
+                    if(message->payload.sensor_message.moisture2 >= 4050)
+                    {
+                        WARN("HIGH MOISTURE CONTENT. POSSIBLE WATER IMMERSION\n");
+                    }
+                    else if(message->payload.sensor_message.moisture2 <= 3700)
+                    {
+                        WARN("MOISTURE SENSOR READING OUT OF RANGE. CHECK SENSOR ENVIRONMENT\n");
+                    }
                     // TODO: Store the response for later sending to Bouquet
-                    break;
-                
-                case FW_UPD_START:
-                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
-                    break;
-                
-                case FW_UPD_END:
-                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
-                    break;
-                    
-                case FW_UPD_PAYLOAD:
-                    // TODO: shouldn't receive this ever (since only 1 Sunflower exists!)
                     break;
                 
                 case PING:

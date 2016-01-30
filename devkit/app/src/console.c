@@ -260,15 +260,25 @@ void processRadioCommand(char* str, uint8_t len)
         switch(str[1])
         {
             case 'r':
-                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+            {
+                uint32_t current_mac = RadioGetDeviceMAC(selected_network_table);
+                if(current_mac != 0x00000000)
+                {
+                    generic_msg = pvPortMalloc(sizeof(generic_message_t));
             
-                // TODO: check we didn't run out of RAM (we should catch this in the 
-                //       application Malloc failed handler, but just in case)
-            
-                generic_msg->cmd = RSSI;
-            
-                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                    // TODO: check we didn't run out of RAM (we should catch this in the 
+                    //       application Malloc failed handler, but just in case)
+                
+                    generic_msg->cmd = RSSI;
+                    generic_msg->dst = current_mac;
+                    SendToDevice((uint8_t*)generic_msg, sizeof(generic_message_t), current_mac);
+                }
+                else
+                {
+                    xprintf("Error selecting MAC address!\r\n");
+                }
                 return;
+            }
             
             case 'p':
                 generic_msg = pvPortMalloc(sizeof(generic_message_t));
@@ -300,6 +310,43 @@ void processRadioCommand(char* str, uint8_t len)
                 xprintf("Radio MAC: 0x%08x\n", RadioGetMACAddress());
                 return;
             
+            case 't':
+                if(len > 4)
+                {
+                    long  polling_rate;
+                    char* first_num;
+                    first_num = &str[3];
+                    xatoi(&first_num, &polling_rate);
+                    
+                    if(polling_rate < 500 || polling_rate > (24 * 60 * 60 * 1000))
+                    {
+                        ERR("Minimum polling rate is 500ms, maximum rate is %d\n", (24 * 60 * 60 * 1000));
+                        return;
+                    }
+                    
+                    uint32_t current_mac = RadioGetDeviceMAC(selected_network_table);
+                    if(current_mac != 0x00000000)
+                    {
+                        generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                
+                        // TODO: check we didn't run out of RAM (we should catch this in the 
+                        //       application Malloc failed handler, but just in case)
+                    
+                        generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                        generic_msg->cmd = SENSOR_CMD;
+                        
+                        
+                        generic_msg->payload.sensor_cmd.sensor_polling_period = polling_rate;
+                        generic_msg->payload.sensor_cmd.valid_fields = 0x1;
+                        SendToDevice((uint8_t*)generic_msg, sizeof(generic_message_t), current_mac);
+                    }
+                    else
+                    {
+                        xprintf("Error selecting MAC address!\r\n");
+                    }
+                }
+                return;
+            
             case 'd':
             {
                 if(len > 4)
@@ -326,12 +373,13 @@ void processRadioCommand(char* str, uint8_t len)
         }
     }
     
-    xprintf("Radio Commands\r\n");
-    xprintf("xr : request RSSI info from remote unit\r\n");
-    xprintf("xi : print radio info\r\n");
-    xprintf("xp : send a radio ping packet\r\n");
-    xprintf("xl : print a list of connected / currently selected nodes\r\n");
-    xprintf("xd <device num> : select a device for command targets\r\n");
+    xprintf("Radio Commands\n");
+    xprintf("xr : request RSSI info from remote unit\n");
+    xprintf("xt <miliseconds> : set sensor polling period\n");
+    xprintf("xi : print radio info\n");
+    xprintf("xp : send a radio ping packet\n");
+    xprintf("xl : print a list of connected / currently selected nodes\n");
+    xprintf("xd <device num> : select a device for command targets\n");
 }
 
 void processDebugCommand(char* str, uint8_t len)
