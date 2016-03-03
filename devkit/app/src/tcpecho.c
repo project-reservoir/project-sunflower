@@ -36,9 +36,13 @@
 #include "stdbool.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include "fw_update.h"
 #include "tcpecho.h"
 #include "stm32f4xx.h"
+#include "radio_packets.h"
+#include "FreeRTOS.h"
+#include "sensor_conversions.h"
 
 #if LWIP_NETCONN
 
@@ -49,14 +53,25 @@
 
 #define TCP_FW_PAYLOAD_BYTES 256
 
+#define MAX_WAITING_LOGS 20
+
 const char* banner = "SUNFLOWER OS TCP/IP TERMINAL INTERFACE";
+
+osMessageQId sensorMsgQ;
 
 void net_printf(struct netconn *conn, const char *fmt, ...);
 void net_bin_nack(struct netconn *conn);
 void net_bin_ack(struct netconn *conn);
 
-/*-----------------------------------------------------------------------------------*/
-static void tcpecho_thread(void *arg)
+uint32_t unix_time;
+
+void tcpecho_os_init(void)
+{
+    osMessageQDef(SensorLogQueue, MAX_WAITING_LOGS, generic_message_t*);
+    sensorMsgQ = osMessageCreate(osMessageQ(SensorLogQueue), NULL);
+}
+
+void tcpecho_thread(void *arg)
 {
     struct netconn *conn, *newconn;
     err_t err;
@@ -67,7 +82,7 @@ static void tcpecho_thread(void *arg)
     conn = netconn_new(NETCONN_TCP);
 
     if (conn != NULL) {
-        /* Bind connection to well known port number 7. */
+        /* Bind connection to well known port number 1337. */
         err = netconn_bind(conn, NULL, 1337);
 
         if (err == ERR_OK) {
@@ -116,15 +131,66 @@ static void tcpecho_thread(void *arg)
                                             switch(((char*)data)[1]) 
                                             {
                                                 case 's':
+                                                    unix_time = atoi((const char*)&(((char*)data)[2]));
                                                     continue;
                                             }
                                             net_printf(newconn, "ts <UNIX time> : set the system time to <UNIX time>\r\n");
                                             
                                             break;
+                                            
+                                        case 'r':
+                                            {
+                                                generic_message_t* msg;
+                                                osEvent            msgQueueEvent;
+                                                
+                                                // Get a sensor log
+                                                do
+                                                {
+                                                    msgQueueEvent = osMessageGet(sensorMsgQ, 0);
+                                                    
+                                                    if(msgQueueEvent.status == osEventMessage)
+                                                    {
+                                                        msg = (generic_message_t*)(msgQueueEvent.value.p);
+                                                        // Print the message to the TCP console
+                                                        
+                                                        net_printf(newconn, "%08x,", msg->src); // Dandelion ID
+                                                        
+                                                        net_printf(newconn, "%d,", unix_time);  // Timestamp
+                                                        
+                                                        // TODO: improve moisture math
+                                                        float moisture2 = msg->payload.sensor_message.moisture2 - 3600.0f;
+                                                        if(moisture2 < 0)
+                                                        {
+                                                            moisture2 = 0.0f;
+                                                        }
+                                                        
+                                                        moisture2 = moisture2 / 500.0f;
+                                                        
+                                                        net_printf(newconn, "%f,", 0.0f);       // Moist 1
+                                                        net_printf(newconn, "%f,", moisture2);  // Moist 2
+                                                        net_printf(newconn, "%f,", 0.0f);       // Moist 3
+                                                        
+                                                        net_printf(newconn, "%f,", 0.0f);       // Soil Temp 1
+                                                        net_printf(newconn, "%f,", 0.0f);       // Soil Temp 2
+                                                        net_printf(newconn, "%f,", 0.0f);       // Soil Temp 3
+                                                        
+                                                        net_printf(newconn, "%f,", 0.0f);       // Air Humidity
+                                                        net_printf(newconn, "%f", msg->payload.sensor_message.chip_temp);        // Air Temp
+                                                        
+                                                        net_printf(newconn, "\n");
+                                                        
+                                                        // Free the memory used by the message
+                                                        vPortFree(msg);
+                                                    }
+                                                } while(msgQueueEvent.status == osEventMessage);
+                                                
+                                            }
+                                            break;
                                         
                                         default:
                                             net_printf(newconn, "m : mode control\r\n");
                                             net_printf(newconn, "t : time control\r\n");
+                                            net_printf(newconn, "r : report request\r\n");
                                             break;
                                     }
                                     net_printf(newconn, "\r\n\n");
@@ -257,7 +323,26 @@ static void tcpecho_thread(void *arg)
         xprintf("can not create TCP netconn");
     }
 }
-/*-----------------------------------------------------------------------------------*/
+
+void unix_time_thread(void)
+{
+    while(1)
+    {
+        unix_time++;
+        vTaskDelay(1000);
+    }
+}
+
+// Add a sensor log to the TCP transmit queue
+// The pointer passed into this function will NEVER be freed automatically: a copy of the data is made
+// Caller must free the input pointer after this function returns.
+void EnqueueSensorTCP(generic_message_t* data)
+{
+    generic_message_t* message = pvPortMalloc(sizeof(generic_message_t));
+    memcpy(message, data, sizeof(generic_message_t));
+    
+    osMessagePut(sensorMsgQ, (uint32_t)message, 0);
+}
 
 void net_printf(struct netconn *conn, const char *fmt, ...)
 {
@@ -272,7 +357,7 @@ void net_printf(struct netconn *conn, const char *fmt, ...)
 void net_bin_ack(struct netconn *conn)
 {
     uint8_t buffer[1];
-    buffer[0] = ACK;
+    buffer[0] = TCP_ACK;
     
     netconn_write(conn, buffer, 1, NETCONN_COPY);
 }
@@ -280,7 +365,7 @@ void net_bin_ack(struct netconn *conn)
 void net_bin_nack(struct netconn *conn)
 {
     uint8_t buffer[1];
-    buffer[0] = NACK;
+    buffer[0] = TCP_NACK;
     
     netconn_write(conn, buffer, 1, NETCONN_COPY);
 }

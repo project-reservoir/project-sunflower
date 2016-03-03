@@ -386,7 +386,9 @@ void RadioTaskHandleIRQ(void)
                     {
                         WARN("MOISTURE SENSOR READING OUT OF RANGE. CHECK SENSOR ENVIRONMENT\n");
                     }
-                    // TODO: Store the response for later sending to Bouquet
+                    
+                    // Pass the message to the tcpecho task
+                    
                     break;
                 
                 case PING:

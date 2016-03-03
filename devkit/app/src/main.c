@@ -53,6 +53,7 @@
 #include "time_sync.h"
 #include "led.h"
 #include "debug.h"
+#include "tcpecho.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -108,6 +109,7 @@ int main(void)
     
     RadioTaskHwInit();
     RadioTaskOSInit();
+    tcpecho_os_init();
     
     //TimeSyncHwInit();
     //TimeSyncInit();
@@ -136,6 +138,9 @@ int main(void)
     
     //osThreadDef(Time_Sync_Thread, (os_pthread)TimeSyncTask, TIME_SYNC_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
     //osThreadCreate(osThread(Time_Sync_Thread), NULL);
+    
+    osThreadDef(Unix_Time_Thread, (os_pthread)unix_time_thread, LED_TASK_PRIO, 1, configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(Unix_Time_Thread), NULL);
 
     /* Start scheduler */
     vTaskStartScheduler();
