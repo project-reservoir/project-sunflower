@@ -79,6 +79,18 @@ class FR7_END(Structure):
     
     def __init__(self):
         self.report_id = 0x07
+
+class SensorReport():
+	moist1   = 0.0
+	moist2   = 0.0
+	moist3   = 0.0
+	temp1    = 0
+	temp2    = 0
+	temp3    = 0
+	airhumid = 0.0
+	batt     = 100.0
+	time     = 0
+	uuid     = "983d3578-3178-42fb-964f-5d57af189242"
         
 class SunflowerTCP:
     sock = None
@@ -91,7 +103,28 @@ class SunflowerTCP:
         self.sock.connect((addr, port))
         # clear the input buffer
         self.sock.recv(100)
-
+	
+	def get_report_buffer(self):
+		self.sock.send("r\n");
+		
+		data = self.sock.recv(1024)
+		
+		data.split(str="DREP", num=string.count(str))
+		
+		rep_buff = SensorReport()
+		
+		rep_buff.moist2 = 0.3
+		rep_buff.temp1 = 20
+		time = int(time.time())
+	
+	
+	def set_timestamp(self, timestamp):
+		self.sock.send("ts %d\n" % timestamp)
+		
+		data = self.sock.recv(1024)
+		
+		print(data)
+		
     def send_tcp_payload(self, fr):
         tcp_buffer = (c_ubyte * sizeof(fr))()
         memmove(tcp_buffer, byref(fr), sizeof(fr))
@@ -147,8 +180,17 @@ def dandelion_image_memory_test(sf):
     
 if __name__ == '__main__':
     
-    sf = SunflowerTCP("192.168.0.136", 1337)
+    sf = SunflowerTCP("192.168.1.2", 1337)
     
-    dandelion_image_memory_test(sf)
+	t = int(time.time())
+	
+	#set unix time on the device
+	sf.set_unix_timestamp(t)
+	
+	while True:
+		time.sleep(1)
+		sf.get_report_buffer()
+	
+    #dandelion_image_memory_test(sf)
     
     sf.shutdown()

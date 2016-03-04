@@ -11,6 +11,7 @@
 #include "time_sync.h"
 #include "si446x_api_lib.h"
 #include "si446x_cmd.h"
+#include "tcpecho.h"
 #include <string.h>
 
 osMessageQId        uartRxMsgQ;
@@ -145,6 +146,23 @@ void processString(char* str)
         case 'd':
             processDebugCommand(str, len);
             break;
+        
+        case 'p':
+            {
+                generic_message_t fakeReport;
+                fakeReport.cmd = SENSOR_MSG;
+                fakeReport.dst = RadioGetMACAddress();
+                fakeReport.src = 0xDEADBEEF;
+                fakeReport.payload.sensor_message.chip_temp = 22;
+                fakeReport.payload.sensor_message.moisture2 = 3700;
+                fakeReport.payload.sensor_message.timestamp = GetUnixTime();
+                
+                EnqueueSensorTCP(&fakeReport);
+                
+                xprintf("Message enqueued\n");
+            }
+            break;
+            
         case 't':
             if(len >= 2)
             {
@@ -155,7 +173,7 @@ void processString(char* str)
                 }
                 else if(str[1] == 'p')
                 {
-                    xprintf("Time print not supported\n");
+                    xprintf("Current UNIX Time: %d\n", GetUnixTime());
                 }
             }
             else
@@ -184,6 +202,7 @@ void processString(char* str)
             xprintf("d : debug information\n");
             xprintf("u : perform a fake firmware upgrade\n");
             xprintf("r : reset commands\n");
+            xprintf("p : add a fake sensor report to the TCP buffer\n");
             break;
     }
     

@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "core_cmInstr.h"
 #include "led.h"
+#include "tcpecho.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -387,8 +388,10 @@ void RadioTaskHandleIRQ(void)
                         WARN("MOISTURE SENSOR READING OUT OF RANGE. CHECK SENSOR ENVIRONMENT\n");
                     }
                     
-                    // Pass the message to the tcpecho task
+                    message->payload.sensor_message.timestamp = GetUnixTime();
                     
+                    // Pass the message to the tcpecho task
+                    EnqueueSensorTCP(message);
                     break;
                 
                 case PING:

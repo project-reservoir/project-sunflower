@@ -153,6 +153,8 @@ void tcpecho_thread(void *arg)
                                                         msg = (generic_message_t*)(msgQueueEvent.value.p);
                                                         // Print the message to the TCP console
                                                         
+                                                        net_printf(newconn, "DREP:  ", msg->src);
+                                                        
                                                         net_printf(newconn, "%08x,", msg->src); // Dandelion ID
                                                         
                                                         net_printf(newconn, "%d,", unix_time);  // Timestamp
@@ -175,15 +177,14 @@ void tcpecho_thread(void *arg)
                                                         net_printf(newconn, "%f,", 0.0f);       // Soil Temp 3
                                                         
                                                         net_printf(newconn, "%f,", 0.0f);       // Air Humidity
-                                                        net_printf(newconn, "%f", msg->payload.sensor_message.chip_temp);        // Air Temp
+                                                        net_printf(newconn, "%d", msg->payload.sensor_message.chip_temp);        // Air Temp
                                                         
-                                                        net_printf(newconn, "\n");
+                                                        net_printf(newconn, "\r\n");
                                                         
                                                         // Free the memory used by the message
                                                         vPortFree(msg);
                                                     }
                                                 } while(msgQueueEvent.status == osEventMessage);
-                                                
                                             }
                                             break;
                                         
@@ -331,6 +332,11 @@ void unix_time_thread(void)
         unix_time++;
         vTaskDelay(1000);
     }
+}
+
+uint32_t GetUnixTime(void)
+{
+    return unix_time;
 }
 
 // Add a sensor log to the TCP transmit queue

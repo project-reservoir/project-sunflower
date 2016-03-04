@@ -22,5 +22,6 @@ void tcpecho_os_init(void);
 void tcpecho_thread(void *arg);
 void unix_time_thread(void);
 void EnqueueSensorTCP(generic_message_t* data);
-    
+uint32_t GetUnixTime(void);
+
 #endif //__TCPECHO_H
