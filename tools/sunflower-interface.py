@@ -1,6 +1,9 @@
 import time
 from ctypes import *
 import socket
+import string
+import psycopg2
+import datetime
 
 DANDELION_DEVICE = 1
 SUNFLOWER_DEVICE = 2
@@ -81,16 +84,19 @@ class FR7_END(Structure):
         self.report_id = 0x07
 
 class SensorReport():
-	moist1   = 0.0
-	moist2   = 0.0
-	moist3   = 0.0
-	temp1    = 0
-	temp2    = 0
-	temp3    = 0
-	airhumid = 0.0
-	batt     = 100.0
-	time     = 0
-	uuid     = "983d3578-3178-42fb-964f-5d57af189242"
+    moist1   = 0.0
+    moist2   = 0.0
+    moist3   = 0.0
+    temp1    = 0
+    temp2    = 0
+    temp3    = 0
+    airhumid = 0.0
+    batt     = 100.0
+    time     = 0
+    uuid     = "983d3578-3178-42fb-964f-fd57af189242"
+    
+    def __str__(self):
+        return "Time: %d, Temp: %d, Moist: %f" % (self.time, self.temp1, self.moist2)
         
 class SunflowerTCP:
     sock = None
@@ -101,30 +107,38 @@ class SunflowerTCP:
     def __init__(self, addr, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((addr, port))
+        self.sock.settimeout(1)
         # clear the input buffer
         self.sock.recv(100)
-	
-	def get_report_buffer(self):
-		self.sock.send("r\n");
-		
-		data = self.sock.recv(1024)
-		
-		data.split(str="DREP", num=string.count(str))
-		
-		rep_buff = SensorReport()
-		
-		rep_buff.moist2 = 0.3
-		rep_buff.temp1 = 20
-		time = int(time.time())
-	
-	
-	def set_timestamp(self, timestamp):
-		self.sock.send("ts %d\n" % timestamp)
-		
-		data = self.sock.recv(1024)
-		
-		print(data)
-		
+    
+    def get_report_buffer(self):
+        self.sock.send("r\n");
+        
+        data = self.sock.recv(1024)
+        print(data)
+        
+        strings = data.split("DREP:  ")
+        
+        reports = []
+        for s in strings:       
+            comp = s.split(",")
+            
+            if len(comp) != 10:
+                continue
+
+            rep_buff = SensorReport()
+            rep_buff.moist2 = float(comp[3])
+            rep_buff.temp1 = int(comp[9])
+            rep_buff.time = int(comp[1])
+            
+            print(rep_buff)
+            
+            reports.append(rep_buff)
+            
+        return reports
+    def set_timestamp(self, timestamp):
+        self.sock.send("ts %d\n" % timestamp)
+        
     def send_tcp_payload(self, fr):
         tcp_buffer = (c_ubyte * sizeof(fr))()
         memmove(tcp_buffer, byref(fr), sizeof(fr))
@@ -180,17 +194,34 @@ def dandelion_image_memory_test(sf):
     
 if __name__ == '__main__':
     
+    print("Connecting to Database...")
+    
+    conn = psycopg2.connect(dbname="postgres", host="localhost", user="postgres", password="autom8")
+    
+    
+    print("Connecting to Sunflower...")
     sf = SunflowerTCP("192.168.1.2", 1337)
     
-	t = int(time.time())
-	
-	#set unix time on the device
-	sf.set_unix_timestamp(t)
-	
-	while True:
-		time.sleep(1)
-		sf.get_report_buffer()
-	
+    print "Connected"
+    
+    t = int(time.time())
+    
+    #set unix time on the device
+    print "Setting time"
+    sf.set_timestamp(t)
+    
+    while True:
+        time.sleep(2)
+        reports = sf.get_report_buffer()
+        print "Report transact:"
+        print(reports)
+        for rep in reports:
+            cur = conn.cursor()
+            fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
+            cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
+            conn.commit()
+            
     #dandelion_image_memory_test(sf)
     
     sf.shutdown()
+    conn.close()
