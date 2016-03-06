@@ -4,6 +4,7 @@ import socket
 import string
 import psycopg2
 import datetime
+import argparse
 
 DANDELION_DEVICE = 1
 SUNFLOWER_DEVICE = 2
@@ -111,6 +112,15 @@ class SunflowerTCP:
         # clear the input buffer
         self.sock.recv(100)
     
+	def open_valve(self, valve):
+		self.sock.send("vo %d\n" % (valve))
+	
+	def close_valve(self, valve):
+	    self.sock.send("vc %d" % (valve))
+		
+	def dandelion_polling_broadcast(self, polling):
+		self.sock.send("p %d" % (polling))
+	
     def get_report_buffer(self):
         self.sock.send("r\n");
         
@@ -194,34 +204,55 @@ def dandelion_image_memory_test(sf):
     
 if __name__ == '__main__':
     
-    print("Connecting to Database...")
-    
-    conn = psycopg2.connect(dbname="postgres", host="localhost", user="postgres", password="autom8")
-    
-    
-    print("Connecting to Sunflower...")
-    sf = SunflowerTCP("192.168.1.2", 1337)
-    
-    print "Connected"
-    
-    t = int(time.time())
-    
-    #set unix time on the device
-    print "Setting time"
-    sf.set_timestamp(t)
-    
-    while True:
-        time.sleep(2)
-        reports = sf.get_report_buffer()
-        print "Report transact:"
-        print(reports)
-        for rep in reports:
-            cur = conn.cursor()
-            fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
-            cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
-            conn.commit()
-            
-    #dandelion_image_memory_test(sf)
-    
-    sf.shutdown()
-    conn.close()
+	# parse arguments
+	parser = argparse.ArgumentParser(description='Sunflower TCP/IP interface tool')
+    parser.add_argument("--ip", help="the Sunflower IP to connect to", action="store", default="192.168.1.2", required=False)
+    parser.add_argument("--port", help="Sunflower communication port", action="store", default="1337", required=False)
+    parser.add_argument("--open", help="open valve X", action='store', default=None, required = False)
+    parser.add_argument("--close", help="close valve X", action='store', default=None, required=False)
+    parser.add_argument("--report_poll", help="Poll sunflower for reports", action='store_true', required=False)
+	parser.add_argument("--change_polling_rate", help="Send a broadcast message to change the sensor polling rate", action="store", required=False)
+	parser.add_argument("--dandelion_upgrade", help="Send a dandelion update to Sunflower", action="store", required=False)
+    args = parser.parse_args()
+	
+	print("Connecting to Sunflower...")
+	sf = SunflowerTCP(args.ip, int(args.port))
+	
+	print "Connected"
+	
+	t = int(time.time())
+		
+	#set unix time on the device
+	print "Setting time"
+	sf.set_timestamp(t)
+	
+	if args.open:
+		sf.open_valve(int(args.open))
+		
+	if args.close:
+		sf.close_valve(int(args.close))
+	
+	if args.change_polling_rate:
+		sf.dandelion_polling_broadcast(int(args.change_polling_rate))
+	
+	if args.report_poll:
+		print("Connecting to Database...")
+		
+		conn = psycopg2.connect(dbname="postgres", host="localhost", user="postgres", password="autom8")
+	
+		while True:
+			time.sleep(2)
+			reports = sf.get_report_buffer()
+			print "Report transact:"
+			print(reports)
+			for rep in reports:
+				cur = conn.cursor()
+				fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
+				cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
+				conn.commit()
+				
+		conn.close()		
+
+	#dandelion_image_memory_test(sf)
+		
+	sf.shutdown()

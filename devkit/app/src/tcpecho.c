@@ -43,6 +43,7 @@
 #include "radio_packets.h"
 #include "FreeRTOS.h"
 #include "sensor_conversions.h"
+#include "valve.h"
 
 #if LWIP_NETCONN
 
@@ -172,9 +173,9 @@ void tcpecho_thread(void *arg)
                                                         net_printf(newconn, "%f,", moisture2);  // Moist 2
                                                         net_printf(newconn, "%f,", 0.0f);       // Moist 3
                                                         
-                                                        net_printf(newconn, "%f,", 0.0f);       // Soil Temp 1
-                                                        net_printf(newconn, "%f,", 0.0f);       // Soil Temp 2
-                                                        net_printf(newconn, "%f,", 0.0f);       // Soil Temp 3
+                                                        net_printf(newconn, "%d,", 0);       // Soil Temp 1
+                                                        net_printf(newconn, "%d,", 0);       // Soil Temp 2
+                                                        net_printf(newconn, "%d,", 0);       // Soil Temp 3
                                                         
                                                         net_printf(newconn, "%f,", 0.0f);       // Air Humidity
                                                         net_printf(newconn, "%d", msg->payload.sensor_message.chip_temp);        // Air Temp
@@ -187,11 +188,53 @@ void tcpecho_thread(void *arg)
                                                 } while(msgQueueEvent.status == osEventMessage);
                                             }
                                             break;
+                                        case 'v':
+                                            {
+                                                uint8_t valve = 0;
+                                                switch(((char*)data)[1]) 
+                                                {
+                                                    case 'o':
+                                                        valve = atoi((const char*)&(((char*)data)[2]));
+                                                        OpenValve(valve);
+                                                        break;
+                                                    
+                                                    case 'c':
+                                                        valve = atoi((const char*)&(((char*)data)[2]));
+                                                        CloseValve(valve);
+                                                        break;
+                                                }
+                                                net_printf(newconn, "ts <UNIX time> : set the system time to <UNIX time>\r\n");
+                                            }
+                                            break;
+                                        case 'p':
+                                            {
+                                                long  polling_rate = atoi((const char*)&(((char*)data)[2]));
+                                                
+                                                if(polling_rate < 500 || polling_rate > (24 * 60 * 60 * 1000))
+                                                {
+                                                    ERR("Minimum polling rate is 500ms, maximum rate is %d\n", (24 * 60 * 60 * 1000));
+                                                    break;
+                                                }
+                                               
+                                                generic_message_t* generic_msg = pvPortMalloc(sizeof(generic_message_t));
                                         
+                                                // TODO: check we didn't run out of RAM (we should catch this in the 
+                                                //       application Malloc failed handler, but just in case)
+                                            
+                                                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                                                generic_msg->cmd = SENSOR_CMD;
+                                                
+                                                generic_msg->payload.sensor_cmd.sensor_polling_period = polling_rate;
+                                                generic_msg->payload.sensor_cmd.valid_fields = 0x1;
+                                                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                                            }
+                                            break;
                                         default:
                                             net_printf(newconn, "m : mode control\r\n");
                                             net_printf(newconn, "t : time control\r\n");
                                             net_printf(newconn, "r : report request\r\n");
+                                            net_printf(newconn, "v : valve control\r\n");
+                                            net_printf(newconn, "p : polling rate\r\n");
                                             break;
                                     }
                                     net_printf(newconn, "\r\n\n");
