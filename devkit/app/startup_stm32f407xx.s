@@ -39,6 +39,8 @@
 ; 
 ;*******************************************************************************
 
+#include "./inc/sunflower_app_version_num.h"
+
 ; Amount of memory (in bytes) allocated for Stack
 ; Tailor this value to your application needs
 ; <h> Stack Configuration
@@ -173,8 +175,15 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     0                                 ; Reserved				                              
                 DCD     HASH_RNG_IRQHandler               ; Hash and Rng
                 DCD     FPU_IRQHandler                    ; FPU
-                
-                                         
+                    
+                ; The following entries make up the metadata header for sunflower images.
+                ; The version is pulled in from a C #define in sunflower_app_version_num.h by
+                ; passing this file through the C preprocessor before passing it to the ARM assembler.
+                DCD     0x0BADC0DE                        ; Reserved for header CRC32
+                DCD     0x0BADC0DE                        ; Reserved for body CRC32
+                DCD     0xDEADBEEF                        ; body CRC32 start mark
+                DCD     0                                 ; Reserved for image size
+                DCD     SUNFLOWER_APP_VERSION             ; Reserved for application version
 __Vectors_End
 
 __Vectors_Size  EQU  __Vectors_End - __Vectors

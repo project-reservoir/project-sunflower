@@ -22,5 +22,6 @@ uint32_t    Get_Dandelion_Version(void);
 uint32_t    Get_Sunflower_Version(void);
 void        Erase_Dandelion_Image(void);
 void        Erase_Sunflower_Image(void);
+uint32_t crc32(uint32_t crc, uint8_t *buf, uint32_t len);
 
 #endif // __FW_UPDATE_H

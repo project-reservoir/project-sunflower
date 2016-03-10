@@ -40,7 +40,6 @@
   ******************************************************************************
   */ 
 
-/* Includes ------------------------------------------------------------------*/
 #include "stm32f4x7_eth.h"
 #include "netconf.h"
 #include "main.h"
@@ -54,9 +53,7 @@
 #include "led.h"
 #include "debug.h"
 #include "tcpecho.h"
-
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
+#include "sunflower_app_header.h"
 
 /*--------------- LCD Messages ---------------*/
 #define MESSAGE1   "     STM32F4x7      "
@@ -71,21 +68,11 @@
 #define CONSOLE_TASK_PRIO   osPriorityNormal
 #define RADIO_TASK_PRIO     osPriorityHigh
 
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
 extern struct netif xnetif;
  
-/* Private function prototypes -----------------------------------------------*/
 extern void tcpecho_init(void);
 extern void udpecho_init(void);
 
-/* Private functions ---------------------------------------------------------*/
-
-/**
-  * @brief  Main program.
-  * @param  None
-  * @retval None
-  */
 int main(void)
 {
     // Needed for FreeRTOS (only use pre-emption priority values)
