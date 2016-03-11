@@ -34,7 +34,7 @@
  
  GBLL   FreeRTOS
 
-FreeRTOS        SETL {TRUE}   
+FreeRTOS        SETL {FALSE}   
 
 
 Stack_Size      EQU     0x00000400

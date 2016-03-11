@@ -12,6 +12,8 @@
 #include "si446x_api_lib.h"
 #include "si446x_cmd.h"
 #include "tcpecho.h"
+#include "fw_update.h"
+#include "crc.h"
 #include <string.h>
 
 osMessageQId        uartRxMsgQ;
@@ -189,9 +191,40 @@ void processString(char* str)
             break;
         
         case 'v':
-            xprintf("SUNFLOWER OS V 0x%08x\n", SUNFLOWER_APP_VERSION);
+            xprintf("SUNFLOWER OS V %d.%d, HW Rev %d, %s\n", (SUNFLOWER_APP_VERSION >> 24) & 0xFF, 
+                                                             (SUNFLOWER_APP_VERSION >> 16) & 0xFF,
+                                                             (SUNFLOWER_APP_VERSION >> 8)  & 0xFF,
+                                                             ((SUNFLOWER_APP_VERSION >> 0)  & 0xFF) == 0x01 ? "DEBUG" : "PRODUCTION" );
+        
             xprintf("BUILD DATE: %s @ %s\n\n", __DATE__, __TIME__);
             break;
+        
+        case 'u':
+            if(len >= 2)
+            {
+                if(str[1] == 'd')
+                {
+                    xprintf("Dandelion image: %s\n", Is_Dandelion_Image_Valid() ? "VALID" : "INVALID" );
+                }
+                else if(str[1] == 's')
+                {
+                    xprintf("Sunflower image (backup): %s\n", Is_Sunflower_Image_Valid(false) ? "VALID" : "INVALID" );
+                    xprintf("Sunflower image (main): %s\n", Is_Sunflower_Image_Valid(true) ? "VALID" : "INVALID" );
+                }
+                else if(str[1] == 'u')
+                {
+                    uint32_t unit_test = 0xDEADBEEF;
+                    xprintf("CRC32 of 0xDEADBEEF: 0x%x\n", crc32(0x00000000, (uint8_t*)(&unit_test), sizeof(uint32_t)));
+                }
+            }
+            else
+            {
+                xprintf("Firmware Image Commands\n");
+                xprintf("ud: check dandelion image valid\n");
+                xprintf("us: check sunflower image valid\n");
+                xprintf("uu: run CRC unit test\n");
+            }
+            
         
         default:
             xprintf("h : print help\n");
@@ -200,7 +233,7 @@ void processString(char* str)
             xprintf("t : time commands\n");
             xprintf("v : print version info\n");
             xprintf("d : debug information\n");
-            xprintf("u : perform a fake firmware upgrade\n");
+            xprintf("u : firmware update commands\n");
             xprintf("r : reset commands\n");
             xprintf("p : add a fake sensor report to the TCP buffer\n");
             break;

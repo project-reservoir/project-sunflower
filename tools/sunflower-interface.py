@@ -107,22 +107,22 @@ class SunflowerTCP:
     
     def __init__(self, addr, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(3)
         self.sock.connect((addr, port))
-        self.sock.settimeout(1)
         # clear the input buffer
         self.sock.recv(100)
     
-	def open_valve(self, valve):
-		self.sock.send("vo %d\n" % (valve))
-	
-	def close_valve(self, valve):
-	    self.sock.send("vc %d" % (valve))
-		
-	def dandelion_polling_broadcast(self, polling):
-		self.sock.send("p %d" % (polling))
-	
+    def open_valve(self, valve):
+        self.sock.sendall("vo %d\r\n" % (valve))
+    
+    def close_valve(self, valve):
+        self.sock.sendall("vc %d\r\n" % (valve))
+        
+    def dandelion_polling_broadcast(self, polling):
+        self.sock.sendall("p %d\r\n" % (polling))
+    
     def get_report_buffer(self):
-        self.sock.send("r\n");
+        self.sock.sendall("r\r\n");
         
         data = self.sock.recv(1024)
         print(data)
@@ -147,12 +147,12 @@ class SunflowerTCP:
             
         return reports
     def set_timestamp(self, timestamp):
-        self.sock.send("ts %d\n" % timestamp)
+        self.sock.sendall("ts %d\r\n" % timestamp)
         
     def send_tcp_payload(self, fr):
         tcp_buffer = (c_ubyte * sizeof(fr))()
         memmove(tcp_buffer, byref(fr), sizeof(fr))
-        self.sock.send(tcp_buffer)
+        self.sock.sendall(tcp_buffer)
         
         if self.get_tcp_ack() != True:
             print "TCP did not ACK!"
@@ -166,7 +166,7 @@ class SunflowerTCP:
         return (ord(data) == 5)
     
     def enter_fw_update_mode(self):
-        self.sock.send("mf\n")
+        self.sock.sendall("mf\r\n")
         
     def exit_fw_update_mode(self):
         pack = FR7_END()
@@ -178,13 +178,80 @@ class SunflowerTCP:
     def shutdown(self):
         self.sock.close()
 
+def sunflower_image_memory_test(sf):
+
+    sf.enter_fw_update_mode()
+    
+    time.sleep(0.5)
+    
+    fr = FR2_START()
+    fr.set_device(SUNFLOWER_DEVICE)
+    sf.send_tcp_payload(fr)
+    
+    time.sleep(0.5)
+    
+    address = 0x00000000
+    while address < SunflowerTCP.sunflower_image_size:
+        fr = FR1_PAYLOAD()
+        fr.set_device(SUNFLOWER_DEVICE)
+        fr.set_address(address)
+        for j in range(0, len(fr.payload)):
+            fr.payload[j] = 1 << 2
+        
+        sf.send_tcp_payload(fr)
+        
+        address += len(fr.payload)
+        
+        print "Wrote address %d" % (address)
+    
+    sf.exit_fw_update_mode()
+
+def sunflower_image_download(sf, filename):
+
+    sf.enter_fw_update_mode()
+    
+    time.sleep(0.5)
+    
+    fr = FR2_START()
+    fr.set_device(SUNFLOWER_DEVICE)
+    sf.send_tcp_payload(fr)
+    
+    time.sleep(0.5)
+    
+    sunflower_fw = open(filename, "rb")
+    
+    address = 0x00000000
+    while address < SunflowerTCP.sunflower_image_size:
+        fr = FR1_PAYLOAD()
+        fr.set_device(SUNFLOWER_DEVICE)
+        fr.set_address(address)
+        fw_bytes = bytearray(sunflower_fw.read(len(fr.payload)))
+        
+        # pad the fw_bytes array out to the required length
+        fw_bytes += "\0" * (len(fr.payload) - len(fw_bytes))
+        
+        for j in range(0, len(fr.payload)):
+            fr.payload[j] = fw_bytes[j]
+        
+        sf.send_tcp_payload(fr)
+        
+        address += len(fr.payload)
+        
+        print "Wrote address %d" % (address)
+    
+    sf.exit_fw_update_mode()
+    
 def dandelion_image_memory_test(sf):
 
     sf.enter_fw_update_mode()
     
+    time.sleep(0.5)
+    
     fr = FR2_START()
     fr.set_device(DANDELION_DEVICE)
     sf.send_tcp_payload(fr)
+    
+    time.sleep(0.5)
     
     address = 0x00000000
     while address < SunflowerTCP.dandelion_image_size:
@@ -192,7 +259,42 @@ def dandelion_image_memory_test(sf):
         fr.set_device(DANDELION_DEVICE)
         fr.set_address(address)
         for j in range(0, len(fr.payload)):
-            fr.payload[j] = 1 << 3
+            fr.payload[j] = 1 << 2
+        
+        sf.send_tcp_payload(fr)
+        
+        address += len(fr.payload)
+        
+        print "Wrote address %d" % (address)
+    
+    sf.exit_fw_update_mode()
+
+def dandelion_image_download(sf, filename):
+
+    sf.enter_fw_update_mode()
+    
+    time.sleep(0.5)
+    
+    fr = FR2_START()
+    fr.set_device(DANDELION_DEVICE)
+    sf.send_tcp_payload(fr)
+    
+    time.sleep(0.5)
+    
+    dandelion_fw = open(filename, "rb")
+    
+    address = 0x00000000
+    while address < SunflowerTCP.dandelion_image_size:
+        fr = FR1_PAYLOAD()
+        fr.set_device(DANDELION_DEVICE)
+        fr.set_address(address)
+        fw_bytes = bytearray(dandelion_fw.read(len(fr.payload)))
+        
+        # pad the fw_bytes array out to the required length
+        fw_bytes += "\0" * (len(fr.payload) - len(fw_bytes))
+        
+        for j in range(0, len(fr.payload)):
+            fr.payload[j] = fw_bytes[j]
         
         sf.send_tcp_payload(fr)
         
@@ -204,55 +306,70 @@ def dandelion_image_memory_test(sf):
     
 if __name__ == '__main__':
     
-	# parse arguments
-	parser = argparse.ArgumentParser(description='Sunflower TCP/IP interface tool')
+    # parse arguments
+    parser = argparse.ArgumentParser(description='Sunflower TCP/IP interface tool')
     parser.add_argument("--ip", help="the Sunflower IP to connect to", action="store", default="192.168.1.2", required=False)
     parser.add_argument("--port", help="Sunflower communication port", action="store", default="1337", required=False)
     parser.add_argument("--open", help="open valve X", action='store', default=None, required = False)
     parser.add_argument("--close", help="close valve X", action='store', default=None, required=False)
     parser.add_argument("--report_poll", help="Poll sunflower for reports", action='store_true', required=False)
-	parser.add_argument("--change_polling_rate", help="Send a broadcast message to change the sensor polling rate", action="store", required=False)
-	parser.add_argument("--dandelion_upgrade", help="Send a dandelion update to Sunflower", action="store", required=False)
+    parser.add_argument("--change_polling_rate", help="Send a broadcast message to change the sensor polling rate", action="store", required=False)
+    parser.add_argument("--dandelion_upgrade", help="Send a dandelion update to Sunflower", action="store", required=False)
+    parser.add_argument("--dandelion_test", help="Perform a test dandelion upgrade", action="store_true", required=False)
+    parser.add_argument("--sunflower_test", help="Perform a test sunflower upgrade", action="store_true", required=False)
+    parser.add_argument("--sunflower_upgrade", help="Send a sunflower update to Sunflower", action="store", required=False)
     args = parser.parse_args()
-	
-	print("Connecting to Sunflower...")
-	sf = SunflowerTCP(args.ip, int(args.port))
-	
-	print "Connected"
-	
-	t = int(time.time())
-		
-	#set unix time on the device
-	print "Setting time"
-	sf.set_timestamp(t)
-	
-	if args.open:
-		sf.open_valve(int(args.open))
-		
-	if args.close:
-		sf.close_valve(int(args.close))
-	
-	if args.change_polling_rate:
-		sf.dandelion_polling_broadcast(int(args.change_polling_rate))
-	
-	if args.report_poll:
-		print("Connecting to Database...")
-		
-		conn = psycopg2.connect(dbname="postgres", host="localhost", user="postgres", password="autom8")
-	
-		while True:
-			time.sleep(2)
-			reports = sf.get_report_buffer()
-			print "Report transact:"
-			print(reports)
-			for rep in reports:
-				cur = conn.cursor()
-				fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
-				cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
-				conn.commit()
-				
-		conn.close()		
-
-	#dandelion_image_memory_test(sf)
-		
-	sf.shutdown()
+    
+    print("Connecting to Sunflower...")
+    sf = SunflowerTCP(args.ip, int(args.port))
+    
+    print "Connected"
+    
+    t = int(time.time())
+        
+    #set unix time on the device
+    print "Setting time"
+    sf.set_timestamp(t)
+    
+    time.sleep(0.5)
+    
+    if args.open:
+        sf.open_valve(int(args.open))
+        
+    if args.close:
+        sf.close_valve(int(args.close))
+    
+    if args.change_polling_rate:
+        sf.dandelion_polling_broadcast(int(args.change_polling_rate))
+        
+    if args.report_poll:
+        print("Connecting to Database...")
+        
+        conn = psycopg2.connect(dbname="postgres", host="localhost", user="postgres", password="autom8")
+    
+        while True:
+            time.sleep(2)
+            reports = sf.get_report_buffer()
+            print "Report transact:"
+            print(reports)
+            for rep in reports:
+                cur = conn.cursor()
+                fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
+                cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
+                conn.commit()
+                
+        conn.close()        
+    
+    if args.dandelion_test:
+        dandelion_image_memory_test(sf)
+    
+    if args.sunflower_test:
+        sunflower_image_memory_test(sf)
+    
+    if args.dandelion_upgrade:
+        dandelion_image_download(sf, args.dandelion_upgrade)
+        
+    if args.sunflower_upgrade:
+        sunflower_image_download(sf, args.sunflower_upgrade)   
+        
+    sf.shutdown()

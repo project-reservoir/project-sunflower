@@ -2,6 +2,7 @@
 #define __FW_UPDATE_H
 
 #include "stm32f4xx.h"
+#include "stm32f4xx_flash.h"
 #include "stdbool.h"
 #include "sunflower_app_header.h"
 
@@ -17,7 +18,7 @@
 bool        Write_Dandelion_Word(uint32_t address, uint32_t word);
 bool        Write_Sunflower_Word(uint32_t address, uint32_t word);
 bool        Is_Dandelion_Image_Valid(void);
-bool        Is_Sunflower_Image_Valid(void);
+bool        Is_Sunflower_Image_Valid(bool main_region);
 uint32_t    Get_Dandelion_Version(void);
 uint32_t    Get_Sunflower_Version(void);
 void        Erase_Dandelion_Image(void);

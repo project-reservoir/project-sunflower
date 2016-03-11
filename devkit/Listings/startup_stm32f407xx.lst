@@ -80,8 +80,8 @@ ARM Macro Assembler    Page 2
    40 00000000         ;*******************************************************
                        ************************
    41 00000000         
-   42 00000000         #line   1                "app\\./inc/sunflower_app_versi
-on_num.h"
+   42 00000000         #line   1                "app\\../common/inc/sunflower_a
+pp_version_num.h"
     1 00000000         
     2 00000000         
     3 00000000         
@@ -510,7 +510,7 @@ ARM Macro Assembler    Page 8
                                                             mark
   185 00000194 00000000        DCD              0           ; Reserved for imag
                                                             e size
-  186 00000198 01010101        DCD              0x01010101  ; Reserved for appl
+  186 00000198 02010101        DCD              0x02010101  ; Reserved for appl
                                                             ication version
   187 0000019C         __Vectors_End
   188 0000019C         
@@ -914,7 +914,7 @@ l_v5\ARM\Inc\ST\STM32F4xx --predefine="__MICROLIB SETA 1" --predefine="__UVISIO
 ARM Macro Assembler    Page 15 
 
 
-N_VERSION SETA 515" --list=.\listings\startup_stm32f407xx.lst app\startup_stm32
+N_VERSION SETA 517" --list=.\listings\startup_stm32f407xx.lst app\startup_stm32
 f407xx.s
 
 

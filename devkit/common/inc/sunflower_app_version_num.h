@@ -7,6 +7,6 @@
 //      CC = HW ID (01 = DEVKIT, 02 = EVT1, 03 = EVT2)
 //      DD = Build type (01 = DEBUG, 02 = PRODUCTION)
 
-#define SUNFLOWER_APP_VERSION       0x01010101
+#define SUNFLOWER_APP_VERSION       0x03010201
 
 #endif // _SUNFLOWER_APP_VERSION_NUM

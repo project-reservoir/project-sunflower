@@ -39,7 +39,7 @@
 ; 
 ;*******************************************************************************
 
-#include "./inc/sunflower_app_version_num.h"
+#include "../common/inc/sunflower_app_version_num.h"
 
 ; Amount of memory (in bytes) allocated for Stack
 ; Tailor this value to your application needs

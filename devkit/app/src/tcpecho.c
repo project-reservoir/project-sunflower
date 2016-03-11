@@ -241,7 +241,7 @@ void tcpecho_thread(void *arg)
                                 }
                                 else if(fw_update_mode)
                                 {                                    
-                                    switch(((char*)data)[0]) 
+                                    switch(((char*)data)[0])
                                     {
                                         // PAYLOAD, type, addr[4], payload[64]
                                         case PAYLOAD:
@@ -255,7 +255,7 @@ void tcpecho_thread(void *arg)
                                                     case DANDELION_DEVICE:
                                                         for(uint16_t i = 0; i < TCP_FW_PAYLOAD_BYTES; i += 4)
                                                         {
-                                                            uint32_t word = (((uint8_t*)data)[6 + i] << 24) | (((uint8_t*)data)[7 + i] << 16) | (((uint8_t*)data)[8 + i] << 8) | (((uint8_t*)data)[9 + i]);
+                                                            uint32_t word = (((uint8_t*)data)[9 + i] << 24) | (((uint8_t*)data)[8 + i] << 16) | (((uint8_t*)data)[7 + i] << 8) | (((uint8_t*)data)[6 + i]);
                                                             Write_Dandelion_Word(addr + i, word);
                                                         }
                                                         net_bin_ack(newconn);
@@ -263,10 +263,10 @@ void tcpecho_thread(void *arg)
                                                     
                                                     // SUNFLOWER TYPE
                                                     case SUNFLOWER_DEVICE:
-                                                        for(uint8_t i = 0; i < 64; i++)
+                                                        for(uint16_t i = 0; i < TCP_FW_PAYLOAD_BYTES; i += 4)
                                                         {
-                                                            uint32_t word = (((uint8_t*)data)[6 + i] << 24) | (((uint8_t*)data)[7 + i] << 16) | (((uint8_t*)data)[8 + i] << 8) | (((uint8_t*)data)[9 + i]);
-                                                            Write_Sunflower_Word(addr, word);
+                                                            uint32_t word = (((uint8_t*)data)[9 + i] << 24) | (((uint8_t*)data)[8 + i] << 16) | (((uint8_t*)data)[7 + i] << 8) | (((uint8_t*)data)[6 + i]);
+                                                            Write_Sunflower_Word(addr + i, word);
                                                         }
                                                         net_bin_ack(newconn);
                                                         break;

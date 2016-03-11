@@ -4,6 +4,7 @@
 ARM Macro Assembler    Page 1 
 
 
+    1 00000000         #line   1                "bootloader\\src\\launch.s"
     1 00000000                 AREA             subrout, CODE, READONLY ; Name 
                                                             this block of code
     2 00000000 4685    launch  MOV              sp, r0      ; Subroutine code
@@ -13,13 +14,13 @@ ARM Macro Assembler    Page 1
     5 00000004                 EXPORT           launch
     6 00000004         
     7 00000004                 END                          ; Mark end of file
-Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
-erwork --depend=.\objects\launch.d -o.\objects\launch.o -IC:\Users\skall\Docume
-nts\GitHub\project-sunflower\devkit\RTE -IC:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\C
-MSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Drivers\CMSIS\Devic
-e\ST\STM32F4xx\Include --predefine="__UVISION_VERSION SETA 517" --predefine="_R
-TE_ SETA 1" --predefine="STM32F407xx SETA 1" --list=.\listings\launch.lst bootl
-oader\src\launch.s
+Command Line: --debug --xref --cpreproc --diag_suppress=9931 --cpu=Cortex-M4.fp
+ --apcs=interwork --depend=.\objects\launch.d -o.\objects\launch.o -IC:\Users\s
+kall\Documents\GitHub\project-sunflower\devkit\RTE -IC:\Keil_v5\ARM\PACK\ARM\CM
+SIS\4.5.0\CMSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Drivers\
+CMSIS\Device\ST\STM32F4xx\Include --predefine="__UVISION_VERSION SETA 517" --pr
+edefine="_RTE_ SETA 1" --predefine="STM32F407xx SETA 1" --list=.\listings\launc
+h.lst bootloader\src\launch.s
 
 
 
@@ -30,15 +31,15 @@ launch 00000000
 
 Symbol: launch
    Definitions
-      At line 2 in file bootloader\src\launch.s
+      At line 2 in file bootloader\\src\\launch.s
    Uses
-      At line 5 in file bootloader\src\launch.s
+      At line 5 in file bootloader\\src\\launch.s
 Comment: launch used once
 subrout 00000000
 
 Symbol: subrout
    Definitions
-      At line 1 in file bootloader\src\launch.s
+      At line 1 in file bootloader\\src\\launch.s
    Uses
       None
 Comment: subrout unused
