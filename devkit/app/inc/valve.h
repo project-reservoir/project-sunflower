@@ -4,21 +4,21 @@
 #include "stm32f4xx.h"
 
 
-#define VALVE_0_PIN     GPIO_Pin_0
-#define VALVE_0_PORT    GPIOD
-#define VALVE_0_CLK     RCC_AHB1Periph_GPIOD
+#define VALVE_0_PIN     GPIO_Pin_2
+#define VALVE_0_PORT    GPIOC
+#define VALVE_0_CLK     RCC_AHB1Periph_GPIOC
 
-#define VALVE_1_PIN     GPIO_Pin_2
-#define VALVE_1_PORT    GPIOD
-#define VALVE_1_CLK     RCC_AHB1Periph_GPIOD
+#define VALVE_1_PIN     GPIO_Pin_3
+#define VALVE_1_PORT    GPIOC
+#define VALVE_1_CLK     RCC_AHB1Periph_GPIOC
 
-#define VALVE_2_PIN     GPIO_Pin_4
-#define VALVE_2_PORT    GPIOD
-#define VALVE_2_CLK     RCC_AHB1Periph_GPIOD
+#define VALVE_2_PIN     GPIO_Pin_10
+#define VALVE_2_PORT    GPIOB
+#define VALVE_2_CLK     RCC_AHB1Periph_GPIOB
 
-#define VALVE_3_PIN     GPIO_Pin_6
-#define VALVE_3_PORT    GPIOD
-#define VALVE_3_CLK     RCC_AHB1Periph_GPIOD
+#define VALVE_3_PIN     GPIO_Pin_14
+#define VALVE_3_PORT    GPIOB
+#define VALVE_3_CLK     RCC_AHB1Periph_GPIOB
 
 void InitValveHw(void);
 void OpenValve(uint8_t valve);

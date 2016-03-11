@@ -203,7 +203,8 @@ void tcpecho_thread(void *arg)
                                                         CloseValve(valve);
                                                         break;
                                                 }
-                                                net_printf(newconn, "ts <UNIX time> : set the system time to <UNIX time>\r\n");
+                                                net_printf(newconn, "vo <valve> : open valve\r\n");
+                                                net_printf(newconn, "vc <valve> : close valve\r\n");
                                             }
                                             break;
                                         case 'p':

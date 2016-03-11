@@ -216,6 +216,11 @@ void processString(char* str)
                     uint32_t unit_test = 0xDEADBEEF;
                     xprintf("CRC32 of 0xDEADBEEF: 0x%x\n", crc32(0x00000000, (uint8_t*)(&unit_test), sizeof(uint32_t)));
                 }
+                else if(str[1] == 't')
+                {
+                    // This function blocks until the firmware update is finished
+                    TransmitFwUpdate();
+                }
             }
             else
             {
@@ -223,12 +228,12 @@ void processString(char* str)
                 xprintf("ud: check dandelion image valid\n");
                 xprintf("us: check sunflower image valid\n");
                 xprintf("uu: run CRC unit test\n");
+                xprintf("ut: send a dandelion firmware update to all field units\n");
             }
             
         
         default:
             xprintf("h : print help\n");
-            xprintf("f : FTP commands\n");
             xprintf("x : radio commands\n");
             xprintf("t : time commands\n");
             xprintf("v : print version info\n");

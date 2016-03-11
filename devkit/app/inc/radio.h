@@ -107,5 +107,6 @@ uint32_t RadioGetDeviceMAC(uint16_t position);
 void SendToDevice(uint8_t* data, uint8_t size, uint32_t mac);
 void SendToBroadcast(uint8_t* data, uint8_t size);
 void SignalRadioIRQ(void);
+void TransmitFwUpdate(void);
 
 #endif // _RADIO_H

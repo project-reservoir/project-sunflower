@@ -53,6 +53,7 @@
 #include "led.h"
 #include "debug.h"
 #include "tcpecho.h"
+#include "valve.h"
 #include "sunflower_app_header.h"
 
 /*--------------- LCD Messages ---------------*/
@@ -90,6 +91,8 @@ int main(void)
 
     /* configure ethernet (GPIOs, clocks, MAC, DMA) */ 
     ETH_BSP_Config();
+    
+    InitValveHw();
     
     ConsoleTaskHwInit();
     ConsoleTaskOSInit();

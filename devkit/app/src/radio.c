@@ -11,6 +11,10 @@
 #include "core_cmInstr.h"
 #include "led.h"
 #include "tcpecho.h"
+#include "fw_update.h"
+#include "app_header.h"
+#include "sunflower_app_header.h"
+#include "crc.h"
 
 // Global variables
 osMessageQId radioTxMsgQ;
@@ -372,20 +376,20 @@ void RadioTaskHandleIRQ(void)
                     break;
                 
                 case SENSOR_MSG:
-                    INFO("Sensor message received from 0x%08x\n", message->src);
+                    DEBUG("Sensor message received from 0x%08x\n", message->src);
                     // TODO: finish adding sensor conversions to this call
                     // INFO("Temp (c, s1, s2, s3, a): %d, %d, %d, %d, %d\n", message->payload.sensor_message.chip_temp);
-                    INFO("Temp (chip): %d\n", message->payload.sensor_message.chip_temp);
+                    DEBUG("Temp (chip): %d\n", message->payload.sensor_message.chip_temp);
                     // TODO: Uncomment this code after OEC demo
                     // INFO("Moist (s1, s2, s3): %d, %d, %d\n", message->payload.sensor_message.moisture0, message->payload.sensor_message.moisture1, message->payload.sensor_message.moisture2);
-                    INFO("Moist (s3): %d\n", message->payload.sensor_message.moisture2);
+                    DEBUG("Moist (s3): %d\n", message->payload.sensor_message.moisture2);
                     if(message->payload.sensor_message.moisture2 >= 4050)
                     {
-                        WARN("HIGH MOISTURE CONTENT. POSSIBLE WATER IMMERSION\n");
+                        DEBUG("HIGH MOISTURE CONTENT. POSSIBLE WATER IMMERSION\n");
                     }
                     else if(message->payload.sensor_message.moisture2 <= 3700)
                     {
-                        WARN("MOISTURE SENSOR READING OUT OF RANGE. CHECK SENSOR ENVIRONMENT\n");
+                        DEBUG("MOISTURE SENSOR READING OUT OF RANGE. CHECK SENSOR ENVIRONMENT\n");
                     }
                     
                     message->payload.sensor_message.timestamp = GetUnixTime();
@@ -517,3 +521,49 @@ uint32_t RadioGetDeviceMAC(uint16_t position)
     return 0x00000000;
 }
 
+void TransmitFwUpdate(void)
+{
+    // Abort update if image fails verification
+    if(!Is_Dandelion_Image_Valid())
+    {
+        return;
+    }
+    
+    APP_HEADER* dandelion = ((APP_HEADER*)DANDELION_IMAGE_START);
+    uint32_t offset = 0;
+    
+    generic_message_t* msg = pvPortMalloc(sizeof(generic_message_t));
+    
+    msg->cmd = FW_UPD_START;
+    msg->src = RadioGetMACAddress();
+    msg->dst = 0xFFFFFFFF;
+    msg->payload.fw_update_start.crc32 = dandelion->crc32;
+    SendToBroadcast((uint8_t*)msg, sizeof(generic_message_t));
+    
+    // Give the dandelions time to wakeup and smell the firmware update
+    vTaskDelay(1000);
+    
+    while(offset < dandelion->image_size)
+    {
+        msg = pvPortMalloc(sizeof(generic_message_t));
+        msg->cmd = FW_UPD_PAYLOAD;
+        msg->src = RadioGetMACAddress();
+        msg->dst = 0xFFFFFFFF;
+        msg->payload.fw_update_data.offset = offset;
+        memcpy(msg->payload.fw_update_data.payload, (uint8_t*)(DANDELION_IMAGE_START + offset), NUM_FW_UPDATE_PAYLOAD_WORDS * 4);
+        
+        SendToBroadcast((uint8_t*)msg, sizeof(generic_message_t));
+        
+        vTaskDelay(250);
+        INFO("Transmitting offset %d of %d\r\n", offset, dandelion->image_size);
+        
+        offset += (NUM_FW_UPDATE_PAYLOAD_WORDS * 4);
+    }
+    
+    msg = pvPortMalloc(sizeof(generic_message_t));
+    
+    msg->cmd = FW_UPD_END;
+    msg->src = RadioGetMACAddress();
+    msg->dst = 0xFFFFFFFF;
+    SendToBroadcast((uint8_t*)msg, sizeof(generic_message_t));
+}
