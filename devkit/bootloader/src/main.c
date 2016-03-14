@@ -21,7 +21,7 @@ void CopyBackupToMain(void);
 int main(void)
 {   
     // If the backup region is valid and the main app is not a debug app
-    if(Is_Sunflower_Image_Valid(false) && (main_app->body_crc32 != 0x0BADC0DE))
+    if(Is_Sunflower_Image_Valid(false))
     {
         // Check if the version is greater than the main app region
         // Or if the main app is invalid

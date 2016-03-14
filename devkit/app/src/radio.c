@@ -532,6 +532,8 @@ void TransmitFwUpdate(void)
     APP_HEADER* dandelion = ((APP_HEADER*)DANDELION_IMAGE_START);
     uint32_t offset = 0;
     
+    INFO("Sending START OF UPDATE\r\n");
+    
     generic_message_t* msg = pvPortMalloc(sizeof(generic_message_t));
     
     msg->cmd = FW_UPD_START;
@@ -559,6 +561,10 @@ void TransmitFwUpdate(void)
         
         offset += (NUM_FW_UPDATE_PAYLOAD_WORDS * 4);
     }
+    
+    vTaskDelay(1000);
+    
+    INFO("Sending END OF UPDATE\r\n");
     
     msg = pvPortMalloc(sizeof(generic_message_t));
     
