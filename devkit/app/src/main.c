@@ -144,6 +144,7 @@ void vApplicationStackOverflowHook(void)
     //TODO: fix 
     //HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
     //__BKPT(0);
+    ERR("STACK OVERFLOW HOOK! HALTING SYSTEM\r\n");
     while(1);
 }
 
@@ -152,6 +153,7 @@ void vApplicationMallocFailedHook(void)
     //TODO: fix 
     //HAL_GPIO_WritePin(LED5_GPIO_PORT, LED5_PIN, GPIO_PIN_SET);
     //__BKPT(0);
+    ERR("MALLOC FAILED HOOK! HALTING SYSTEM\r\n");
     while(1);
 }
 

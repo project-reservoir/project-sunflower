@@ -372,25 +372,33 @@ void RadioTaskHandleIRQ(void)
             {
                 // The base station has requested info from us: reply with it
                 case DEVICE_INFO:
-                    // TODO: Store the response for later sending to Bouquet
+                    xprintf("Device Info: \r\n");
+                    xprintf("MAC: 0x%x \r\n", message->payload.device_info.mac);
+                    xprintf("OS Version: %d.%d\r\n", (message->payload.device_info.version >> 24) & 0xFF, (message->payload.device_info.version >> 16) & 0xFF);
+                    xprintf("Battery Level: %d\r\n", message->payload.device_info.battery_level);
                     break;
                 
                 case SENSOR_MSG:
                     DEBUG("Sensor message received from 0x%08x\n", message->src);
-                    // TODO: finish adding sensor conversions to this call
-                    // INFO("Temp (c, s1, s2, s3, a): %d, %d, %d, %d, %d\n", message->payload.sensor_message.chip_temp);
-                    DEBUG("Temp (chip): %d\n", message->payload.sensor_message.chip_temp);
-                    // TODO: Uncomment this code after OEC demo
-                    // INFO("Moist (s1, s2, s3): %d, %d, %d\n", message->payload.sensor_message.moisture0, message->payload.sensor_message.moisture1, message->payload.sensor_message.moisture2);
-                    DEBUG("Moist (s3): %d\n", message->payload.sensor_message.moisture2);
-                    if(message->payload.sensor_message.moisture2 >= 4050)
+                
+                    DEBUG("Temp (c, s1, s2, s3, air): %d, %d, %d, %d, %d\n", message->payload.sensor_message.chip_temp,
+                                                                          (int)TMP102_To_Float(message->payload.sensor_message.temp0),
+                                                                          (int)TMP102_To_Float(message->payload.sensor_message.temp1),
+                                                                          (int)TMP102_To_Float(message->payload.sensor_message.temp2), 
+                                                                          (int)HTU21D_Temp_To_Float(message->payload.sensor_message.air_temp));
+                                                                          
+                    DEBUG("Moist (s1, s2, s3): %d, %d, %d\n", (int)Moisture_To_Float(message->payload.sensor_message.moisture0), (int)Moisture_To_Float(message->payload.sensor_message.moisture1), (int)Moisture_To_Float(message->payload.sensor_message.moisture2));
+                    DEBUG("Humid: %d\n", (int)HTU21D_Humid_To_Float(message->payload.sensor_message.humid));
+                    DEBUG("Altitude: %d m\n", (int)MPL311_Alt_To_Float(message->payload.sensor_message.alt));
+                                                                          
+                    /*if(message->payload.sensor_message.moisture2 >= 4050)
                     {
                         DEBUG("HIGH MOISTURE CONTENT. POSSIBLE WATER IMMERSION\n");
                     }
                     else if(message->payload.sensor_message.moisture2 <= 3700)
                     {
                         DEBUG("MOISTURE SENSOR READING OUT OF RANGE. CHECK SENSOR ENVIRONMENT\n");
-                    }
+                    }*/
                     
                     message->payload.sensor_message.timestamp = GetUnixTime();
                     

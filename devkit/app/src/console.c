@@ -316,6 +316,19 @@ void processRadioCommand(char* str, uint8_t len)
     {
         switch(str[1])
         {
+            case 'g':
+            {
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+        
+                // TODO: check we didn't run out of RAM (we should catch this in the 
+                //       application Malloc failed handler, but just in case)
+            
+                generic_msg->cmd = DEVICE_INFO;
+                generic_msg->dst = 0xFFFFFFFF;
+                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                return;
+            }
+            
             case 'r':
             {
                 uint32_t current_mac = RadioGetDeviceMAC(selected_network_table);
@@ -427,16 +440,49 @@ void processRadioCommand(char* str, uint8_t len)
                     return;
                 }
             }
+            
+            case 's':
+            {
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+        
+                // TODO: check we didn't run out of RAM (we should catch this in the 
+                //       application Malloc failed handler, but just in case)
+            
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                generic_msg->cmd = SENSOR_CMD;
+                
+                generic_msg->payload.sensor_cmd.valid_fields = 0x80000000;
+                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                return;
+            }
+            
+            case 'z':
+            {
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+        
+                // TODO: check we didn't run out of RAM (we should catch this in the 
+                //       application Malloc failed handler, but just in case)
+            
+                generic_msg = pvPortMalloc(sizeof(generic_message_t));
+                generic_msg->cmd = SENSOR_CMD;
+                
+                generic_msg->payload.sensor_cmd.valid_fields = 0x40000000;
+                SendToBroadcast((uint8_t*)generic_msg, sizeof(generic_message_t));
+                return;
+            }
         }
     }
     
     xprintf("Radio Commands\n");
+    xprintf("xs : reset remote unit\n");
     xprintf("xr : request RSSI info from remote unit\n");
     xprintf("xt <miliseconds> : set sensor polling period\n");
     xprintf("xi : print radio info\n");
     xprintf("xp : send a radio ping packet\n");
     xprintf("xl : print a list of connected / currently selected nodes\n");
     xprintf("xd <device num> : select a device for command targets\n");
+    xprintf("xg : get device info from target device\n");
+    xprintf("xz : order all sensors to enter sleep mode\n");
 }
 
 void processDebugCommand(char* str, uint8_t len)

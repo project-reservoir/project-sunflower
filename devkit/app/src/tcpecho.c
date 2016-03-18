@@ -161,24 +161,27 @@ void tcpecho_thread(void *arg)
                                                         net_printf(newconn, "%d,", unix_time);  // Timestamp
                                                         
                                                         // TODO: improve moisture math
-                                                        float moisture2 = msg->payload.sensor_message.moisture2 - 3600.0f;
-                                                        if(moisture2 < 0)
+                                                        float moisture0 = msg->payload.sensor_message.moisture0;
+                                                        float moisture1 = msg->payload.sensor_message.moisture1;
+                                                        float moisture2 = msg->payload.sensor_message.moisture2;
+                                                        
+                                                        /*if(moisture2 < 0)
                                                         {
                                                             moisture2 = 0.0f;
-                                                        }
+                                                        }*/
                                                         
-                                                        moisture2 = moisture2 / 500.0f;
+                                                        //moisture2 = moisture2 / 500.0f;
                                                         
-                                                        net_printf(newconn, "%f,", 0.0f);       // Moist 1
+                                                        net_printf(newconn, "%f,", moisture0);  // Moist 0
+                                                        net_printf(newconn, "%f,", moisture1);  // Moist 1
                                                         net_printf(newconn, "%f,", moisture2);  // Moist 2
-                                                        net_printf(newconn, "%f,", 0.0f);       // Moist 3
+                                                                                                                
+                                                        net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp0));               // Soil Temp 1
+                                                        net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp1));               // Soil Temp 2
+                                                        net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp2));               // Soil Temp 3
                                                         
-                                                        net_printf(newconn, "%d,", 0);       // Soil Temp 1
-                                                        net_printf(newconn, "%d,", 0);       // Soil Temp 2
-                                                        net_printf(newconn, "%d,", 0);       // Soil Temp 3
-                                                        
-                                                        net_printf(newconn, "%f,", 0.0f);       // Air Humidity
-                                                        net_printf(newconn, "%d", msg->payload.sensor_message.chip_temp);        // Air Temp
+                                                        net_printf(newconn, "%f,", HTU21D_Temp_To_Float(msg->payload.sensor_message.air_temp));       // Air Humidity
+                                                        net_printf(newconn, "%d", msg->payload.sensor_message.chip_temp);                             // Air Temp
                                                         
                                                         net_printf(newconn, "\r\n");
                                                         
@@ -391,7 +394,10 @@ void EnqueueSensorTCP(generic_message_t* data)
     generic_message_t* message = pvPortMalloc(sizeof(generic_message_t));
     memcpy(message, data, sizeof(generic_message_t));
     
-    osMessagePut(sensorMsgQ, (uint32_t)message, 0);
+    if(osMessagePut(sensorMsgQ, (uint32_t)message, 0) != osOK)
+    {
+        vPortFree(message);
+    }
 }
 
 void net_printf(struct netconn *conn, const char *fmt, ...)
