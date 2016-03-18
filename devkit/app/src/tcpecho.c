@@ -173,8 +173,8 @@ void tcpecho_thread(void *arg)
                                                         net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp1));               // Soil Temp 2
                                                         net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp2));               // Soil Temp 3
                                                         
-                                                        net_printf(newconn, "%f,", HTU21D_Temp_To_Float(msg->payload.sensor_message.air_temp));       // Air Humidity
-                                                        net_printf(newconn, "%d", msg->payload.sensor_message.chip_temp);                             // Air Temp
+                                                        net_printf(newconn, "%f,", HTU21D_Humid_To_Float(msg->payload.sensor_message.humid));         // Air Humidity
+                                                        net_printf(newconn, "%d", HTU21D_Temp_To_Float(msg->payload.sensor_message.air_temp));        // Air temp                       // Air Temp
                                                         
                                                         net_printf(newconn, "\r\n");
                                                         

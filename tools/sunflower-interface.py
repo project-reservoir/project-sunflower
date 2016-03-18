@@ -1,4 +1,4 @@
-import time
+iwmport time
 from ctypes import *
 import socket
 import string
@@ -92,6 +92,7 @@ class SensorReport():
     temp2    = 0
     temp3    = 0
     airhumid = 0.0
+    airtemp  = 0.0
     batt     = 100.0
     time     = 0
     uuid     = "983d3578-3178-42fb-964f-fd57af189242"
@@ -137,9 +138,15 @@ class SunflowerTCP:
                 continue
 
             rep_buff = SensorReport()
-            rep_buff.moist2 = float(comp[3])
-            rep_buff.temp1 = int(comp[9])
             rep_buff.time = int(comp[1])
+            rep_buff.moist1 = float(comp[2])
+            rep_buff.moist2 = float(comp[3])
+            rep_buff.moist4 = float(comp[4])
+            rep_buff.temp1 = int(comp[5])
+            rep_buff.temp2 = int(comp[6])
+            rep_buff.temp3 = int(comp[7])
+            rep_buff.airhumid = int(comp[8])
+            rep_buff.airtemp = int(comp[9])
             
             print(rep_buff)
             
@@ -355,18 +362,8 @@ if __name__ == '__main__':
             for rep in reports:
                 cur = conn.cursor()
                 fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
-                cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
+                cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(%s,%s,%s,%s,%s,%s,%s,99.0,%s,%s,1)", (str(rep.moist1), str(rep.moist2), str(rep.moist3), str(rep.airhumid), str(rep.temp1), str(rep.temp2), str(rep.temp3), fancytime, rep.uuid))
                 conn.commit()
-                cur.execute("SELECT moisturelimit FROM dandelions WHERE id='{0}'".format(rep.uuid))
-                mlim = cur.fetchone()[0]
-                if (rep.moist2 < mlim):
-                    #values are hard-coded for the demo
-                    cur.execute("INSERT INTO valve_Reports(valveid, reporttime, valvestatusid) VALUES(ARRAY['2','n','d','c'],fancytime,1)")
-                    #better water command needed
-                    sf.open_valve(1)
-                    conn.commit()
-                    time.sleep(5)
-                    sf.close_valve(1)
                 
         conn.close()        
     
