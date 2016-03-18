@@ -388,8 +388,10 @@ void RadioTaskHandleIRQ(void)
                                                                           (int)HTU21D_Temp_To_Float(message->payload.sensor_message.air_temp));
                                                                           
                     DEBUG("Moist (s1, s2, s3): %d, %d, %d\n", (int)Moisture_To_Float(message->payload.sensor_message.moisture0), (int)Moisture_To_Float(message->payload.sensor_message.moisture1), (int)Moisture_To_Float(message->payload.sensor_message.moisture2));
+                    DEBUG("Moist Raw (s1, s2, s3): %d, %d, %d\n", (int)message->payload.sensor_message.moisture0, (int)message->payload.sensor_message.moisture1, (int)message->payload.sensor_message.moisture2);
                     DEBUG("Humid: %d\n", (int)HTU21D_Humid_To_Float(message->payload.sensor_message.humid));
                     DEBUG("Altitude: %d m\n", (int)MPL311_Alt_To_Float(message->payload.sensor_message.alt));
+                    DEBUG("Acceleration events: %d\n", message->payload.sensor_message.acc);
                                                                           
                     /*if(message->payload.sensor_message.moisture2 >= 4050)
                     {

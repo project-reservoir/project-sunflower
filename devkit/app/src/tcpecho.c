@@ -165,16 +165,9 @@ void tcpecho_thread(void *arg)
                                                         float moisture1 = msg->payload.sensor_message.moisture1;
                                                         float moisture2 = msg->payload.sensor_message.moisture2;
                                                         
-                                                        /*if(moisture2 < 0)
-                                                        {
-                                                            moisture2 = 0.0f;
-                                                        }*/
-                                                        
-                                                        //moisture2 = moisture2 / 500.0f;
-                                                        
-                                                        net_printf(newconn, "%f,", moisture0);  // Moist 0
-                                                        net_printf(newconn, "%f,", moisture1);  // Moist 1
-                                                        net_printf(newconn, "%f,", moisture2);  // Moist 2
+                                                        net_printf(newconn, "%f,", Moisture_To_Float(moisture0));  // Moist 0
+                                                        net_printf(newconn, "%f,", Moisture_To_Float(moisture1));  // Moist 1
+                                                        net_printf(newconn, "%f,", Moisture_To_Float(moisture2));  // Moist 2
                                                                                                                 
                                                         net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp0));               // Soil Temp 1
                                                         net_printf(newconn, "%f,", TMP102_To_Float(msg->payload.sensor_message.temp1));               // Soil Temp 2

@@ -357,16 +357,16 @@ if __name__ == '__main__':
                 fancytime = datetime.datetime.fromtimestamp(rep.time).strftime('%Y-%m-%d %H:%M:%S')
                 cur.execute("INSERT INTO reports(moisture1, moisture2, moisture3, humidity, temperature1, temperature2, temperature3, batterylevel, reporttime, dandelionid, stateid) VALUES(0.0,%s,0.0,0.0,%s,0,0,99.0,%s,%s,1)", (str(rep.moist2), str(rep.temp1), fancytime, rep.uuid))
                 conn.commit()
-				cur.execute("SELECT moisturelimit FROM dandelions WHERE id='{0}'".format(rep.uuid))
-				mlim = cur.fetchone()[0]
-				if (rep.moist2 < mlim):
-					#values are hard-coded for the demo
-					cur.execute("INSERT INTO valve_Reports(valveid, reporttime, valvestatusid) VALUES(ARRAY['2','n','d','c'],fancytime,1)")
-					#better water command needed
-					sf.open_valve(1)
-					conn.commit()
-					time.sleep(5)
-					sf.close_valve(1)
+                cur.execute("SELECT moisturelimit FROM dandelions WHERE id='{0}'".format(rep.uuid))
+                mlim = cur.fetchone()[0]
+                if (rep.moist2 < mlim):
+                    #values are hard-coded for the demo
+                    cur.execute("INSERT INTO valve_Reports(valveid, reporttime, valvestatusid) VALUES(ARRAY['2','n','d','c'],fancytime,1)")
+                    #better water command needed
+                    sf.open_valve(1)
+                    conn.commit()
+                    time.sleep(5)
+                    sf.close_valve(1)
                 
         conn.close()        
     
