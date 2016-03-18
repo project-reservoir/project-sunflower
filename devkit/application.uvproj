@@ -10,6 +10,7 @@
       <TargetName>devkit</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pCCUsed>5060061::V5.06 update 1 (build 61)::ARMCC</pCCUsed>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32F407VG</Device>
@@ -76,9 +77,9 @@
             <nStopB2X>0</nStopB2X>
           </BeforeMake>
           <AfterMake>
-            <RunUserProg1>0</RunUserProg1>
+            <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
+            <UserProg1Name>$K\ARM\ARMCC\bin\fromelf.exe --bin --output=@L.bin !L</UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
@@ -227,6 +228,7 @@
             <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
+            <nSecure>0</nSecure>
             <RoSelD>3</RoSelD>
             <RwSelD>3</RwSelD>
             <CodeSel>0</CodeSel>
@@ -309,8 +311,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8004000</StartAddress>
-                <Size>0x100000</Size>
+                <StartAddress>0x8020000</StartAddress>
+                <Size>0x40000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -363,9 +365,11 @@
             <useXO>0</useXO>
             <v6Lang>0</v6Lang>
             <v6LangP>0</v6LangP>
+            <vShortEn>0</vShortEn>
+            <vShortWch>0</vShortWch>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F40XX, USE_STDPERIPH_DRIVER, USE_DHCP, USE_FULL_ASSERT</Define>
+              <Define>STM32F40XX, USE_STDPERIPH_DRIVER, USE_FULL_ASSERT</Define>
               <Undefine></Undefine>
               <IncludePath>.\app\inc;.\support\CMSIS\Include;.\support\STM32F4x7_ETH_Driver\inc;.\support\STM32F4xx_StdPeriph_Driver\inc;.\support\STM32F4-Discovery;.\support\lwip_vgit\include;.\support\lwip_vgit\include\lwip;.\support\lwip_vgit\include\netif;.\support\lwip_vgit\port\FreeRTOS;.\support\lwip_vgit\port;.\support\FreeRTOS\include;.\support\FreeRTOS\portable\RVDS\ARM_CM4F;.\support\FreeRTOS\CMSIS_RTOS;.\common\inc;.\support\Si4463\drivers\radio\Si446x;.\support\Si4463\drivers\radio;..\..\project-dandelion\devkit\cross-platform\inc;..\..\project-dandelion\devkit\common\inc</IncludePath>
             </VariousControls>
@@ -381,7 +385,7 @@
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--cpreproc</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
@@ -485,6 +489,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\src\crc.c</FilePath>
             </File>
+            <File>
+              <FileName>valve.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\src\valve.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -579,6 +588,16 @@
               <FileName>crc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\app\inc\crc.h</FilePath>
+            </File>
+            <File>
+              <FileName>valve.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app\inc\valve.h</FilePath>
+            </File>
+            <File>
+              <FileName>sunflower_app_version_num.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\common\inc\sunflower_app_version_num.h</FilePath>
             </File>
           </Files>
         </Group>

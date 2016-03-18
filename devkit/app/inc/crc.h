@@ -3,6 +3,6 @@
 
 #include "stm32f4xx.h"
 
-uint32_t crc32(uint8_t* message, uint32_t size);
+uint32_t crc32(uint32_t crc, uint8_t *buf, uint32_t len);
 
 #endif //_CRC_H

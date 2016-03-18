@@ -88,7 +88,7 @@
 #define GW_ADDR3   1
 
 /* MII and RMII mode selection, for STM324xG-EVAL Board(MB786) RevB ***********/
-#define RMII_MODE 
+#define RMII_MODE
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */  
